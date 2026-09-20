@@ -1,10 +1,15 @@
 """Command-line entry point for the local Olist pipeline."""
 
 import argparse
+from functools import partial
 from math import isfinite
 from pathlib import Path
 
 from prak.auto_eda import DriftThresholds, report_dataset, report_drift
+from prak.clustering.distances import TimestampDistance
+from prak.clustering.models.temporal import train_temporal
+from prak.clustering.report import report_clustering
+from prak.clustering.training import train_clustering
 from prak.preparation import prepare_data
 from prak.update import initialize_reference, update_reference
 
@@ -26,6 +31,17 @@ def _drift_threshold(value: str) -> float:
     except ValueError as exc:
         raise argparse.ArgumentTypeError(message) from exc
     if not isfinite(number) or not 0 <= number <= 1:
+        raise argparse.ArgumentTypeError(message)
+    return number
+
+
+def _random_state(value: str) -> int:
+    message = "ожидается целое число в [0, 2**32 - 1]"
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(message) from exc
+    if not 0 <= number <= 2**32 - 1:
         raise argparse.ArgumentTypeError(message)
     return number
 
@@ -87,6 +103,24 @@ def main(argv: list[str] | None = None) -> None:
                 f"--{feature}-threshold", type=_drift_threshold, default=default,
                 help=f"порог дрейфа {feature}, конечное число в [0, 1] (по умолчанию: {default:.2f})",
             )
+    cluster = commands.add_parser(
+        "cluster", help="обучить кластеризацию и сохранить модель, расстояние и метки",
+        description="Временной бейзлайн: равные последовательные группы по времени покупки.",
+    )
+    cluster.add_argument("--batch", type=Path, required=True, help="CSV; для temporal — накопленные данные")
+    cluster.add_argument("--output-dir", type=Path, required=True, help="каталог модели данного шага")
+    cluster.add_argument("--model", choices=["temporal"], default="temporal")
+    cluster.add_argument("--distance", choices=["timestamp"], default="timestamp")
+    cluster.add_argument("--n-clusters", type=_positive_int, default=20)
+    evaluate = commands.add_parser(
+        "evaluate", help="оценить сохранённые метки: силуэт и отчёт с t-SNE",
+        description="Независимая оценка без обучения: выполненный notebook и самодостаточный HTML.",
+    )
+    evaluate.add_argument("--dataset", type=Path, required=True, help="CSV всех накопленных данных")
+    evaluate.add_argument("--new-batch", type=Path, required=True, help="CSV последнего добавленного батча")
+    evaluate.add_argument("--model-dir", type=Path, required=True, help="каталог модели, расстояния и меток")
+    evaluate.add_argument("--max-evaluation-rows", type=_positive_int, default=1000)
+    evaluate.add_argument("--random-state", type=_random_state, default=42)
     args = parser.parse_args(argv)
     try:
         if args.command == "prepare":
@@ -98,6 +132,21 @@ def main(argv: list[str] | None = None) -> None:
             report = report_dataset(args.dataset, args.output_dir)
         elif args.command == "init":
             report = initialize_reference(args.batch, args.reference, args.output_dir)
+        elif args.command == "cluster":
+            strategies = {"temporal": train_temporal}
+            distances = {"timestamp": TimestampDistance}
+            artifacts = train_clustering(
+                args.batch, args.output_dir,
+                strategy=partial(
+                    strategies[args.model], n_clusters=args.n_clusters,
+                    distance=distances[args.distance](),
+                ),
+            )
+        elif args.command == "evaluate":
+            report = report_clustering(
+                args.dataset, args.new_batch, args.model_dir,
+                max_evaluation_rows=args.max_evaluation_rows, random_state=args.random_state,
+            )
         else:
             thresholds = DriftThresholds(
                 price=args.price_threshold, category=args.category_threshold,
@@ -115,6 +164,12 @@ def main(argv: list[str] | None = None) -> None:
         # CLI boundary: data, kernel, rendering and filesystem errors all exit 1.
         stage = "подготовки" if args.command == "prepare" else args.command
         parser.exit(1, f"Ошибка {stage}: {exc}\n")
+
+    if args.command == "cluster":
+        print(f"Модель: {artifacts.model_path}")
+        print(f"Расстояние: {artifacts.distance_path}")
+        print(f"Метки: {artifacts.labels_path}")
+        return
 
     if args.command == "update":
         print(f"Эталон: {args.reference.resolve()}")

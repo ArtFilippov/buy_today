@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "ipykernel>=6.29",
+    "joblib>=1.4",
     "jupyterlab>=4.6.3",
     "matplotlib>=3.10.0",
     "nbclient>=0.10",

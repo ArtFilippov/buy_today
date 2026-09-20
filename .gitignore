@@ -15,3 +15,6 @@ wheels/
 
 # Generated datasets and batch streams
 /data/
+
+# Trained models, labels and evaluation reports
+/models/

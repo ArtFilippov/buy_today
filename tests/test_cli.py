@@ -89,7 +89,7 @@ def test_prepare_no_categories_is_failure(raw_tables, write_raw, tmp_path):
 
 @pytest.mark.parametrize("args", [
     ["--help"], ["prepare", "--help"], ["eda", "--help"], ["init", "--help"],
-    ["deda", "--help"], ["update", "--help"],
+    ["deda", "--help"], ["update", "--help"], ["cluster", "--help"], ["evaluate", "--help"],
 ])
 def test_help(tmp_path, args):
     result = run_cli(*args, cwd=tmp_path)
@@ -356,3 +356,62 @@ def test_drift_command_exit_codes_in_subprocess(tmp_path, command, args, code, m
     assert message in result.stderr
     assert not result.stdout
     assert not (tmp_path / "missing.csv").exists()
+
+
+def test_cluster_then_evaluate_from_another_cwd(working_frame, write_dataset, tmp_path):
+    dataset = write_dataset(working_frame, 'data \' with " quotes.csv')
+    model_dir = tmp_path / "model ' dir"
+    result = run_cli(
+        "cluster", "--batch", dataset.name, "--output-dir", model_dir.name,
+        "--model", "temporal", "--distance", "timestamp", "--n-clusters", "3", cwd=tmp_path,
+    )
+    assert result.returncode == 0, result.stderr
+    artifacts = {path: path.read_bytes() for path in model_dir.iterdir()}
+    assert {path.name for path in artifacts} == {"model.joblib", "distance.joblib", "labels.csv"}
+    assert str(model_dir / "labels.csv") in result.stdout
+    result = run_cli(
+        "evaluate", "--dataset", dataset.name, "--new-batch", dataset.name,
+        "--model-dir", model_dir.name, "--max-evaluation-rows", "8", "--random-state", "17", cwd=tmp_path,
+    )
+    assert result.returncode == 0, result.stderr
+    assert str(model_dir / "report.html") in result.stdout
+    html = (model_dir / "report.html").read_text()
+    assert "Выбрано строк: 8; новых: 8; прежних: 0" in html
+    assert "random_state: 17" in html
+    assert {path: path.read_bytes() for path in artifacts} == artifacts
+
+
+@pytest.mark.parametrize("args", [
+    ["cluster"], ["evaluate"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--n-clusters", "0"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--model", "unknown"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--distance", "unknown"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--timestamp-column", "time"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--max-evaluation-rows", "5"],
+    ["evaluate", "--dataset", "a", "--model-dir", "b"],
+    ["evaluate", "--dataset", "a", "--new-batch", "a", "--model-dir", "b", "--max-evaluation-rows", "0"],
+    ["evaluate", "--dataset", "a", "--new-batch", "a", "--model-dir", "b", "--random-state", "-1"],
+    ["evaluate", "--dataset", "a", "--new-batch", "a", "--model-dir", "b", "--random-state", "4294967296"],
+    ["evaluate", "--dataset", "a", "--new-batch", "a", "--model-dir", "b", "--random-state", "1.5"],
+])
+def test_clustering_invalid_arguments_exit_two(args):
+    with pytest.raises(SystemExit) as error:
+        main(args)
+    assert error.value.code == 2
+
+
+@pytest.mark.parametrize("command", ["cluster", "evaluate"])
+def test_clustering_missing_input_exits_one(tmp_path, command):
+    args = ["--batch", "missing.csv", "--output-dir", "model"] if command == "cluster" else [
+        "--dataset", "missing.csv", "--new-batch", "missing.csv", "--model-dir", "model",
+    ]
+    result = run_cli(command, *args, cwd=tmp_path)
+    assert result.returncode == 1
+    assert f"Ошибка {command}" in result.stderr
+
+
+def test_cluster_too_many_clusters_is_data_error(working_frame, write_dataset, tmp_path):
+    dataset = write_dataset(working_frame)
+    result = run_cli("cluster", "--batch", dataset.name, "--output-dir", "model", cwd=tmp_path)
+    assert result.returncode == 1
+    assert "n_samples must be >= n_clusters" in result.stderr
