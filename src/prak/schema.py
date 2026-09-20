@@ -66,7 +66,10 @@ def read_dataset(path: Path | str) -> pd.DataFrame:
         path, dtype=CSV_DTYPES, encoding="utf-8", float_precision="round_trip"
     )
     if tuple(frame.columns) != COLUMNS:
-        raise ValueError("Expected the 35 working dataset columns in schema order")
+        raise ValueError(
+            "Expected the 35 working dataset columns in schema order; "
+            f"got {len(frame.columns)} columns: {list(frame.columns)}"
+        )
     for column in DATE_COLUMNS:
         frame[column] = pd.to_datetime(
             frame[column], format=DATE_FORMAT, errors="raise"

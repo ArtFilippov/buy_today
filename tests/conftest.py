@@ -3,6 +3,50 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from prak.schema import DATE_COLUMNS, DATE_FORMAT, DTYPES
+
+
+@pytest.fixture
+def working_frame() -> pd.DataFrame:
+    """Complete positions with tied purchase times and distinct item keys."""
+    values = {
+        column: [1 if dtype in ("float64", "int64") else "value"] * 12
+        for column, dtype in DTYPES.items()
+    }
+    for column in DATE_COLUMNS:
+        values[column] = pd.date_range("2018-01-01", periods=12, freq="h")
+    values.update({
+        "order_id": [f"order_{index // 2:03d}" for index in range(12)],
+        "order_item_id": [1, 2] * 6,
+        "order_purchase_timestamp": pd.date_range("2018-01-01", periods=6, freq="h").repeat(2),
+        "customer_zip_code_prefix": ["00123"] * 12,
+        "seller_zip_code_prefix": ["00456"] * 12,
+        "price": [100.12345678912345] * 12,
+        "product_category_name": [f"category_{index:02d}" for index in reversed(range(12))],
+        "customer_state": ["SP"] * 8 + ["RJ"] * 3 + ["MG"],
+    })
+    return pd.DataFrame(values).astype(DTYPES)
+
+
+@pytest.fixture
+def new_batch(working_frame) -> pd.DataFrame:
+    """A later, disjoint batch with the same distributions and repeated products."""
+    frame = working_frame.copy()
+    frame["order_id"] = "new_" + frame["order_id"]
+    for column in DATE_COLUMNS:
+        frame[column] += pd.Timedelta(days=1)
+    return frame
+
+
+@pytest.fixture
+def write_dataset(tmp_path):
+    def write(frame: pd.DataFrame, name: str = "input ' batch.csv") -> Path:
+        path = tmp_path / name
+        frame.to_csv(path, index=False, encoding="utf-8", date_format=DATE_FORMAT)
+        return path
+
+    return write
+
 
 @pytest.fixture
 def raw_tables() -> dict[str, pd.DataFrame]:
