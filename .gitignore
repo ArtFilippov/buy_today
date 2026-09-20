@@ -5,9 +5,13 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
 
 # Virtual environments
 .venv
 
 # Downloaded source data
 /dataset/
+
+# Generated datasets and batch streams
+/data/

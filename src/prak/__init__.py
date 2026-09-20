@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from prak!")
+"""Local Olist data and recommendation pipeline."""
