@@ -8,7 +8,9 @@ from prak.schema import COLUMNS, DATE_COLUMNS, DTYPES, read_dataset
 
 
 def test_complete_dataset_and_geography(raw_tables, write_raw, tmp_path):
-    result = prepare_data(write_raw(raw_tables), tmp_path / "stream", batch_size=3)
+    result = prepare_data(
+        write_raw(raw_tables), tmp_path / "stream", batch_size=3, min_category_count=1,
+    )
     working = read_dataset(result.working_dataset_path)
     manifest = json.loads(result.manifest_path.read_text())
 
@@ -30,7 +32,10 @@ def test_complete_dataset_and_geography(raw_tables, write_raw, tmp_path):
     assert working["seller_geolocation_lng"].eq(-45.0).all()
     assert all(pd.api.types.is_datetime64_dtype(working[c]) for c in DATE_COLUMNS)
     assert result.rows_before_cleaning == result.rows_after_cleaning == 12
+    assert result.rows_after_category_filtering == 12
+    assert result.categories_before_filtering == result.categories_after_filtering == 1
     assert manifest["statistics"]["rows_dropped_missing"] == 0
+    assert manifest["statistics"]["rows_dropped_rare_categories"] == 0
     assert set(manifest["statistics"]["missing_before_cleaning"].values()) == {0}
     assert len(manifest["sources"]["files"]) == 7
     assert manifest["working_dataset"]["rows"] == 12
@@ -54,7 +59,7 @@ def test_sellers_counted_before_delivered_filter(raw_tables, write_raw, tmp_path
         sellers, sellers.assign(seller_id="seller_b")
     ])
 
-    result = prepare_data(write_raw(raw_tables), tmp_path / "stream")
+    result = prepare_data(write_raw(raw_tables), tmp_path / "stream", min_category_count=1)
     working = read_dataset(result.working_dataset_path)
     stats = json.loads(result.manifest_path.read_text())["statistics"]
 
@@ -88,7 +93,7 @@ def test_cleaning_and_untranslated_categories(raw_tables, write_raw, tmp_path):
     items.loc[2, "product_id"] = "product_b"
     items.loc[3, "product_id"] = "product_c"
 
-    result = prepare_data(write_raw(raw_tables), tmp_path / "stream")
+    result = prepare_data(write_raw(raw_tables), tmp_path / "stream", min_category_count=1)
     working = read_dataset(result.working_dataset_path)
     stats = json.loads(result.manifest_path.read_text())["statistics"]
 
@@ -102,6 +107,91 @@ def test_cleaning_and_untranslated_categories(raw_tables, write_raw, tmp_path):
     assert not working.isna().any().any()
     assert working["order_id"].tolist() == [f"order_{i:03d}" for i in range(3, 12)]
     assert working.loc[0, "product_category_name"] == "pc_gamer"
+
+
+@pytest.mark.parametrize("threshold", [3, 1000])
+def test_category_cutoff_and_filtered_batches(raw_category_tables, write_raw, tmp_path, threshold):
+    tables = raw_category_tables({
+        "rare": threshold - 1, "boundary": threshold, "common": threshold + 1,
+    })
+    # Exercise the default 1000 as well as an explicit small threshold.
+    options = {} if threshold == 1000 else {"min_category_count": threshold}
+    output = tmp_path / "stream"
+    result = prepare_data(write_raw(tables), output, batch_size=threshold, **options)
+    working = read_dataset(result.working_dataset_path)
+    manifest = json.loads(result.manifest_path.read_text())
+    stats = manifest["statistics"]
+
+    assert working["product_category_name"].value_counts().to_dict() == {
+        "boundary": threshold, "common": threshold + 1,
+    }
+    assert working["order_id"].tolist() == [
+        f"order_{index:05d}" for index in range(threshold - 1, 3 * threshold)
+    ]
+    assert result.rows_before_cleaning == result.rows_after_cleaning == 3 * threshold
+    assert result.rows_after_category_filtering == 2 * threshold + 1
+    assert result.categories_before_filtering == stats["categories_before_filtering"] == 3
+    assert result.categories_after_filtering == stats["categories_after_filtering"] == 2
+    assert stats["rows_dropped_missing"] == 0
+    assert stats["rows_dropped_rare_categories"] == threshold - 1
+    assert stats["stages"]["cleaned"]["rows"] == 3 * threshold
+    assert stats["stages"]["category_filtered"] == {
+        "rows": 2 * threshold + 1, "orders": 2 * threshold + 1, "products": 2,
+    }
+    assert manifest["parameters"]["min_category_count"] == threshold
+    assert manifest["working_dataset"]["rows"] == 2 * threshold + 1
+    assert result.batch_sizes == (threshold, threshold)
+    assert result.dropped_tail_rows == 1
+    batches = [read_dataset(output / entry["path"]) for entry in manifest["batches"]]
+    pd.testing.assert_frame_equal(
+        pd.concat(batches, ignore_index=True), working.iloc[:-1], check_exact=True,
+    )
+
+    shuffled = {name: frame.sample(frac=1, random_state=42) for name, frame in tables.items()}
+    second_output = tmp_path / "second"
+    prepare_data(write_raw(shuffled), second_output, batch_size=threshold, **options)
+    for path in ["working_dataset.csv", "manifest.json", "state.json"] + [
+        entry["path"] for entry in manifest["batches"]
+    ]:
+        assert (output / path).read_bytes() == (second_output / path).read_bytes()
+
+
+def test_category_counts_use_complete_rows(raw_category_tables, write_raw, tmp_path):
+    tables = raw_category_tables({"becomes_rare": 4, "common": 8})
+    tables["olist_orders_dataset.csv"].loc[:1, "order_approved_at"] = None
+    result = prepare_data(write_raw(tables), tmp_path / "stream", min_category_count=3)
+    working = read_dataset(result.working_dataset_path)
+    stats = json.loads(result.manifest_path.read_text())["statistics"]
+
+    assert result.rows_before_cleaning == 12
+    assert result.rows_after_cleaning == 10
+    assert result.rows_after_category_filtering == 8
+    assert working["product_category_name"].eq("common").all()
+    assert stats["rows_dropped_missing"] == stats["rows_dropped_rare_categories"] == 2
+
+
+def test_category_counts_use_translated_positions(raw_category_tables, write_raw, tmp_path):
+    tables = raw_category_tables({"brinquedos": 2, "toys": 2, "rare": 1})
+    result = prepare_data(write_raw(tables), tmp_path / "stream", min_category_count=3)
+    working = read_dataset(result.working_dataset_path)
+
+    assert working["product_category_name"].tolist() == ["toys"] * 4
+    assert working["product_id"].nunique() == 2
+    assert result.categories_before_filtering == 2
+    assert result.categories_after_filtering == 1
+
+
+def test_all_categories_removed_before_writing(raw_tables, write_raw, tmp_path):
+    output = tmp_path / "stream"
+    with pytest.raises(ValueError, match="min_category_count=1000, retained rows=0"):
+        prepare_data(write_raw(raw_tables), output)
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("threshold", [0, -1, 1.5, True, "1000", None])
+def test_invalid_category_threshold_is_rejected_before_reading(tmp_path, threshold):
+    with pytest.raises(ValueError, match="min_category_count must be a positive integer"):
+        prepare_data(tmp_path / "absent", tmp_path / "stream", min_category_count=threshold)
 
 
 @pytest.mark.parametrize(
@@ -125,7 +215,7 @@ def test_chronological_batches(raw_tables, write_raw, tmp_path, rows, batch_size
         raw_tables["olist_order_items_dataset.csv"].iloc[:rows].sample(frac=1, random_state=7)
     )
     output = tmp_path / "stream"
-    result = prepare_data(write_raw(raw_tables), output, batch_size)
+    result = prepare_data(write_raw(raw_tables), output, batch_size, min_category_count=1)
     working = read_dataset(result.working_dataset_path)
     manifest = json.loads(result.manifest_path.read_text())
     batches = [read_dataset(output / entry["path"]) for entry in manifest["batches"]]
@@ -153,7 +243,7 @@ def test_positions_of_one_order_can_cross_batch_boundary(raw_tables, write_raw, 
     items.loc[6, ["order_id", "order_item_id"]] = ["order_005", 2]
     raw_tables["olist_order_items_dataset.csv"] = items.iloc[::-1]
     output = tmp_path / "stream"
-    prepare_data(write_raw(raw_tables), output, batch_size=3)
+    prepare_data(write_raw(raw_tables), output, batch_size=3, min_category_count=1)
     first = read_dataset(output / "batches/batch_000.csv")
     second = read_dataset(output / "batches/batch_001.csv")
     assert first.iloc[-1][["order_id", "order_item_id"]].tolist() == ["order_005", 1]
@@ -162,11 +252,11 @@ def test_positions_of_one_order_can_cross_batch_boundary(raw_tables, write_raw, 
 
 def test_reproducibility_with_shuffled_sources(raw_tables, write_raw, tmp_path):
     first_dir, second_dir = tmp_path / "first", tmp_path / "second"
-    first = prepare_data(write_raw(raw_tables), first_dir, batch_size=2)
+    first = prepare_data(write_raw(raw_tables), first_dir, batch_size=2, min_category_count=1)
     shuffled = {
         name: frame.sample(frac=1, random_state=42) for name, frame in raw_tables.items()
     }
-    prepare_data(write_raw(shuffled), second_dir, batch_size=2)
+    prepare_data(write_raw(shuffled), second_dir, batch_size=2, min_category_count=1)
     manifest = json.loads(first.manifest_path.read_text())
     paths = ["working_dataset.csv", "manifest.json", "state.json"]
     paths.extend(entry["path"] for entry in manifest["batches"])
@@ -176,11 +266,11 @@ def test_reproducibility_with_shuffled_sources(raw_tables, write_raw, tmp_path):
 
 def test_repreparation_resets_state_and_replaces_manifest(raw_tables, write_raw, tmp_path):
     raw_dir, output = write_raw(raw_tables), tmp_path / "stream"
-    first = prepare_data(raw_dir, output, batch_size=1)
+    first = prepare_data(raw_dir, output, batch_size=1, min_category_count=1)
     assert len(first.batch_sizes) == 7
     (output / "state.json").write_text('{"next_batch_index": 4}')
     (output / "batches/unrelated.csv").write_text("not a batch")
-    result = prepare_data(raw_dir, output, batch_size=5)
+    result = prepare_data(raw_dir, output, batch_size=5, min_category_count=1)
     manifest = json.loads(result.manifest_path.read_text())
 
     assert result.batch_sizes == (6, 5)

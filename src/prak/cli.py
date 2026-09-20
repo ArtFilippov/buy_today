@@ -47,6 +47,10 @@ def main(argv: list[str] | None = None) -> None:
         "--batch-size", type=_positive_int, default=5000,
         help="размер батчей после первого (по умолчанию: 5000)",
     )
+    prepare.add_argument(
+        "--min-category-count", type=_positive_int, default=1000,
+        help="минимум позиций категории во всём очищенном датасете (по умолчанию: 1000)",
+    )
     eda = commands.add_parser(
         "eda", help="проверить один датасет и создать EDA-отчёт",
         description="Исполнить EDA в отдельном ядре Python и сохранить notebook и HTML.",
@@ -86,7 +90,10 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     try:
         if args.command == "prepare":
-            result = prepare_data(args.raw_dir, args.output_dir, args.batch_size)
+            result = prepare_data(
+                args.raw_dir, args.output_dir, args.batch_size,
+                min_category_count=args.min_category_count,
+            )
         elif args.command == "eda":
             report = report_dataset(args.dataset, args.output_dir)
         elif args.command == "init":
@@ -126,6 +133,9 @@ def main(argv: list[str] | None = None) -> None:
     print(f"Строк до очистки: {result.rows_before_cleaning:,}")
     print(f"Строк после очистки: {result.rows_after_cleaning:,}")
     print(f"Удалено неполных строк: {result.rows_before_cleaning - result.rows_after_cleaning:,}")
+    print(f"Удалено строк редких категорий: {result.rows_after_cleaning - result.rows_after_category_filtering:,}")
+    print(f"Категорий: {result.categories_before_filtering} → {result.categories_after_filtering}")
+    print(f"Строк после фильтрации категорий: {result.rows_after_category_filtering:,}")
     print(f"Батчей: {len(result.batch_sizes)}; размеры: {list(result.batch_sizes)}")
     print(f"Отброшенный из потока хвост: {result.dropped_tail_rows:,}")
     print(f"Рабочий датасет: {result.working_dataset_path}")

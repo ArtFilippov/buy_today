@@ -31,16 +31,60 @@ def test_prepare_command(raw_tables, write_raw, tmp_path, extra_args, sizes):
     raw_dir = write_raw(raw_tables)
     result = run_cli(
         "prepare", "--raw-dir", raw_dir.name, "--output-dir", "prepared stream",
-        *extra_args, cwd=tmp_path,
+        "--min-category-count", "1", *extra_args, cwd=tmp_path,
     )
     assert result.returncode == 0, result.stderr
     manifest_path = tmp_path / "prepared stream/manifest.json"
     manifest = json.loads(manifest_path.read_text())
     assert [batch["rows"] for batch in manifest["batches"]] == sizes
+    assert manifest["parameters"]["min_category_count"] == 1
     assert str(manifest_path) in result.stdout
     assert "Строк после очистки: 12" in result.stdout
+    assert "Удалено неполных строк: 0" in result.stdout
+    assert "Удалено строк редких категорий: 0" in result.stdout
+    assert "Строк после фильтрации категорий: 12" in result.stdout
     assert "Батчей:" in result.stdout
     assert (tmp_path / "prepared stream/working_dataset.csv").is_file()
+
+
+def test_prepare_default_category_threshold(raw_category_tables, write_raw, tmp_path):
+    tables = raw_category_tables({"rare": 999, "boundary": 1000, "common": 1001})
+    tables["olist_orders_dataset.csv"].loc[0, "order_approved_at"] = None
+    raw_dir = write_raw(tables)
+    result = run_cli(
+        "prepare", "--raw-dir", raw_dir.name, "--output-dir", "stream", cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Удалено неполных строк: 1" in result.stdout
+    assert "Удалено строк редких категорий: 998" in result.stdout
+    assert "Категорий: 3 → 2" in result.stdout
+    assert "Строк после фильтрации категорий: 2,001" in result.stdout
+    manifest = json.loads((tmp_path / "stream/manifest.json").read_text())
+    assert manifest["parameters"]["min_category_count"] == 1000
+    assert read_dataset(tmp_path / "stream/working_dataset.csv")[
+        "product_category_name"
+    ].value_counts().to_dict() == {"boundary": 1000, "common": 1001}
+
+
+@pytest.mark.parametrize("threshold", ["0", "-1", "1.5"])
+def test_prepare_invalid_category_threshold(tmp_path, threshold):
+    result = run_cli(
+        "prepare", "--raw-dir", "absent", "--output-dir", "stream",
+        "--min-category-count", threshold, cwd=tmp_path,
+    )
+    assert result.returncode == 2
+    assert "--min-category-count" in result.stderr
+
+
+def test_prepare_no_categories_is_failure(raw_tables, write_raw, tmp_path):
+    raw_dir = write_raw(raw_tables)
+    result = run_cli(
+        "prepare", "--raw-dir", raw_dir.name, "--output-dir", "stream", cwd=tmp_path,
+    )
+    assert result.returncode == 1
+    assert "min_category_count=1000, retained rows=0" in result.stderr
+    assert not (tmp_path / "stream").exists()
 
 
 @pytest.mark.parametrize("args", [
@@ -51,6 +95,8 @@ def test_help(tmp_path, args):
     result = run_cli(*args, cwd=tmp_path)
     assert result.returncode == 0
     assert "prak" in result.stdout
+    if args[0] == "prepare":
+        assert "--min-category-count" in result.stdout
     if args[0] in {"deda", "update"}:
         for name in ("batch", "reference", "output-dir", "price-threshold", "category-threshold", "state-threshold"):
             assert f"--{name}" in result.stdout

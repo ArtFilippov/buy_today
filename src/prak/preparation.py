@@ -69,6 +69,9 @@ class PreparationResult:
     manifest_path: Path
     rows_before_cleaning: int
     rows_after_cleaning: int
+    rows_after_category_filtering: int
+    categories_before_filtering: int
+    categories_after_filtering: int
     batch_sizes: tuple[int, ...]
     dropped_tail_rows: int
 
@@ -215,22 +218,23 @@ def _file_metadata(frame: pd.DataFrame, path: str) -> dict:
 
 
 def prepare_data(
-    raw_dir: Path | str, output_dir: Path | str, batch_size: int = 5000
+    raw_dir: Path | str, output_dir: Path | str, batch_size: int = 5000,
+    *, min_category_count: int = 1000,
 ) -> PreparationResult:
     """Prepare seven raw CSVs and overwrite the dataset, batches and manifest.
 
-    The first batch contains N // 2 rows; later batches contain batch_size rows.
+    After removing incomplete rows, retain product categories with at least
+    min_category_count positions in the entire cleaned dataset. The first batch
+    contains N // 2 retained rows; later batches contain batch_size rows.
     An incomplete tail stays in working_dataset.csv but is omitted from the
     stream. The manifest lists the current batches; state.json resets to index 0.
-    At least two complete rows and a positive integer batch_size are required.
+    At least two rows must survive both filters. batch_size and
+    min_category_count must be positive integers.
     Invalid keys, references, source formats or I/O failures raise immediately.
     """
-    if (
-        isinstance(batch_size, bool)
-        or not isinstance(batch_size, int)
-        or batch_size <= 0
-    ):
-        raise ValueError("batch_size must be a positive integer")
+    for name, value in (("batch_size", batch_size), ("min_category_count", min_category_count)):
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ValueError(f"{name} must be a positive integer")
     raw_dir, output_dir = Path(raw_dir).resolve(), Path(output_dir).resolve()
     tables = {
         name: pd.read_csv(
@@ -243,16 +247,28 @@ def prepare_data(
         for name, (filename, columns) in _SOURCES.items()
     }
     assembled, statistics = _assemble(tables)
+    cleaned = assembled.dropna(subset=list(COLUMNS)).astype(DTYPES)
+    if len(cleaned) < 2:
+        raise ValueError("At least two complete rows are required after cleaning")
+    statistics["stages"]["cleaned"] = _row_counts(cleaned)
+    statistics["rows_dropped_missing"] = len(assembled) - len(cleaned)
+
+    category_counts = cleaned["product_category_name"].value_counts()
+    retained_categories = category_counts.index[category_counts.ge(min_category_count)]
     working = (
-        assembled.dropna(subset=list(COLUMNS))
+        cleaned.loc[cleaned["product_category_name"].isin(retained_categories)]
         .sort_values(list(SORT_KEY))
         .reset_index(drop=True)
-        .astype(DTYPES)
     )
     if len(working) < 2:
-        raise ValueError("At least two complete rows are required after cleaning")
-    statistics["stages"]["cleaned"] = _row_counts(working)
-    statistics["rows_dropped_missing"] = len(assembled) - len(working)
+        raise ValueError(
+            "At least two rows are required after category filtering; "
+            f"min_category_count={min_category_count}, retained rows={len(working)}"
+        )
+    statistics["stages"]["category_filtered"] = _row_counts(working)
+    statistics["rows_dropped_rare_categories"] = len(cleaned) - len(working)
+    statistics["categories_before_filtering"] = len(category_counts)
+    statistics["categories_after_filtering"] = len(retained_categories)
 
     (output_dir / "batches").mkdir(parents=True, exist_ok=True)
     working_path = output_dir / "working_dataset.csv"
@@ -292,6 +308,7 @@ def prepare_data(
             "drop_last": True,
             "sort_key": list(SORT_KEY),
             "drop_missing": "any_of_selected_columns",
+            "min_category_count": min_category_count,
         },
         "statistics": statistics,
         "working_dataset": _file_metadata(working, "working_dataset.csv"),
@@ -308,7 +325,10 @@ def prepare_data(
         working_dataset_path=working_path,
         manifest_path=manifest_path,
         rows_before_cleaning=len(assembled),
-        rows_after_cleaning=len(working),
+        rows_after_cleaning=len(cleaned),
+        rows_after_category_filtering=len(working),
+        categories_before_filtering=len(category_counts),
+        categories_after_filtering=len(retained_categories),
         batch_sizes=tuple(batch["rows"] for batch in batches),
         dropped_tail_rows=dropped_tail_rows,
     )

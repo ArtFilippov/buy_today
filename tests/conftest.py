@@ -116,6 +116,38 @@ def raw_tables() -> dict[str, pd.DataFrame]:
 
 
 @pytest.fixture
+def raw_category_tables(raw_tables):
+    """Build complete sources with specified order-item counts per category."""
+    def build(category_counts: dict[str, int]) -> dict[str, pd.DataFrame]:
+        tables = {name: frame.copy() for name, frame in raw_tables.items()}
+        product_ids = [
+            f"product_{index}" for index, count in enumerate(category_counts.values())
+            for _ in range(count)
+        ]
+        order_ids = [f"order_{index:05d}" for index in range(len(product_ids))]
+        for filename in ("olist_order_items_dataset.csv", "olist_orders_dataset.csv"):
+            tables[filename] = (
+                tables[filename].iloc[[0] * len(order_ids)].reset_index(drop=True)
+                .assign(order_id=order_ids)
+            )
+        tables["olist_order_items_dataset.csv"]["product_id"] = product_ids
+        tables["olist_orders_dataset.csv"]["order_purchase_timestamp"] = pd.date_range(
+            "2018-01-01", periods=len(order_ids), freq="h",
+        ).strftime(DATE_FORMAT)
+        tables["olist_products_dataset.csv"] = (
+            tables["olist_products_dataset.csv"].iloc[[0] * len(category_counts)]
+            .reset_index(drop=True)
+            .assign(
+                product_id=[f"product_{index}" for index in range(len(category_counts))],
+                product_category_name=list(category_counts),
+            )
+        )
+        return tables
+
+    return build
+
+
+@pytest.fixture
 def write_raw(tmp_path):
     def write(tables: dict[str, pd.DataFrame]) -> Path:
         directory = tmp_path / "raw source"
