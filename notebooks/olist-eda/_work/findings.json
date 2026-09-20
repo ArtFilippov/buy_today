@@ -1,0 +1,513 @@
+{
+  "rows": 96068,
+  "columns": 35,
+  "orders": 84130,
+  "users": 81541,
+  "products": 30991,
+  "full_duplicates": 0,
+  "missing_any_rows": 2046,
+  "quality_flags": [
+    {
+      "проверка": "Подтверждение раньше покупки",
+      "число": 0,
+      "знаменатель": 84116,
+      "единица": "заказ"
+    },
+    {
+      "проверка": "Перевозчик раньше покупки",
+      "число": 148,
+      "знаменатель": 84128,
+      "единица": "заказ"
+    },
+    {
+      "проверка": "Доставка раньше покупки",
+      "число": 0,
+      "знаменатель": 84124,
+      "единица": "заказ"
+    },
+    {
+      "проверка": "Перевозчик раньше подтверждения",
+      "число": 1193,
+      "знаменатель": 84114,
+      "единица": "заказ"
+    },
+    {
+      "проверка": "Доставка раньше перевозчика",
+      "число": 23,
+      "знаменатель": 84123,
+      "единица": "заказ"
+    },
+    {
+      "проверка": "price < 0",
+      "число": 0,
+      "знаменатель": 96068,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "freight_value < 0",
+      "число": 0,
+      "знаменатель": 96068,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_name_lenght < 0",
+      "число": 0,
+      "знаменатель": 94531,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_description_lenght < 0",
+      "число": 0,
+      "знаменатель": 94531,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_photos_qty < 0",
+      "число": 0,
+      "знаменатель": 94531,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_weight_g < 0",
+      "число": 0,
+      "знаменатель": 96050,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_length_cm < 0",
+      "число": 0,
+      "знаменатель": 96050,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_height_cm < 0",
+      "число": 0,
+      "знаменатель": 96050,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_width_cm < 0",
+      "число": 0,
+      "знаменатель": 96050,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "price = 0",
+      "число": 0,
+      "знаменатель": 96068,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "freight_value = 0",
+      "число": 168,
+      "знаменатель": 96068,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_weight_g = 0",
+      "число": 8,
+      "знаменатель": 96050,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "product_photos_qty = 0",
+      "число": 0,
+      "знаменатель": 94531,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "customer: вне грубой рамки Бразилии",
+      "число": 4,
+      "знаменатель": 95821,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "customer: несовпадение штата и геосправочника",
+      "число": 0,
+      "знаменатель": 95821,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "seller: вне грубой рамки Бразилии",
+      "число": 0,
+      "знаменатель": 95821,
+      "единица": "позиция"
+    },
+    {
+      "проверка": "seller: несовпадение штата и геосправочника",
+      "число": 445,
+      "знаменатель": 95821,
+      "единица": "позиция"
+    }
+  ],
+  "missing_geo_overlap": 1,
+  "missing_category_products": 584,
+  "varying_price_products": 4646,
+  "partial_orders": 328,
+  "removed_orders": 12348,
+  "item_retention": 0.8717841683530405,
+  "category_retention": {
+    "bed_bath_table": 88.05806628321008,
+    "health_beauty": 84.81774960380348,
+    "sports_leisure": 87.78318111730519,
+    "furniture_decor": 98.70098039215686,
+    "computers_accessories": 74.04500261643119,
+    "housewares": 95.87932303164092,
+    "watches_gifts": 64.61853558627753,
+    "telephony": 84.85327313769751,
+    "garden_tools": 96.50890346766636,
+    "auto": 95.14492753623188
+  },
+  "peak_month": "2017-11-01",
+  "peak_month_orders": 6452,
+  "numeric_quantiles": {
+    "price": {
+      "0.5": 69.9,
+      "0.95": 349.9,
+      "0.99": 899.0,
+      "1.0": 6735.0
+    },
+    "freight_value": {
+      "0.5": 16.35,
+      "0.95": 46.11649999999994,
+      "0.99": 86.36,
+      "1.0": 409.68
+    },
+    "product_name_lenght": {
+      "0.5": 52.0,
+      "0.95": 60.0,
+      "0.99": 63.0,
+      "1.0": 76.0
+    },
+    "product_description_lenght": {
+      "0.5": 607.0,
+      "0.95": 2098.0,
+      "0.99": 3362.0,
+      "1.0": 3992.0
+    },
+    "product_photos_qty": {
+      "0.5": 2.0,
+      "0.95": 6.0,
+      "0.99": 8.0,
+      "1.0": 20.0
+    },
+    "product_weight_g": {
+      "0.5": 700.0,
+      "0.95": 9850.0,
+      "0.99": 19250.0,
+      "1.0": 40425.0
+    },
+    "product_length_cm": {
+      "0.5": 25.0,
+      "0.95": 63.0,
+      "0.99": 98.0,
+      "1.0": 105.0
+    },
+    "product_height_cm": {
+      "0.5": 13.0,
+      "0.95": 45.0,
+      "0.99": 65.0,
+      "1.0": 105.0
+    },
+    "product_width_cm": {
+      "0.5": 20.0,
+      "0.95": 45.0,
+      "0.99": 63.0,
+      "1.0": 118.0
+    }
+  },
+  "top10_categories_share": 0.6339884248657202,
+  "buyer_sp_share": 0.41847141328895754,
+  "seller_sp_share": 0.7149206811841612,
+  "single_order_share": 0.9715725831176953,
+  "repeat_users": 2318,
+  "three_order_users": 197,
+  "before_repeat_share": 0.03000278497825575,
+  "repeat_user_product_pairs": 327,
+  "unique_user_product_pairs": 86973,
+  "matrix_density": 3.441698538302958e-05,
+  "singleton_products": 17701,
+  "singleton_product_share": 0.5711658223355167,
+  "top1pct_item_share": 0.2118499396260982,
+  "top10pct_item_share": 0.5187679560311446,
+  "cold_start": [
+    {
+      "cut": "2017-10-01",
+      "end_exclusive": "2017-12-30",
+      "train_orders": 23776,
+      "test_orders": 15087,
+      "test_items": 17373,
+      "test_users": 14803,
+      "known_users": 193,
+      "known_users_pct": 1.303789772343444,
+      "known_product_items_pct": 48.183963621711854,
+      "both_known_items_pct": 0.6964830484084499,
+      "unseen_unique_products_pct": 69.9616368286445
+    },
+    {
+      "cut": "2018-01-01",
+      "end_exclusive": "2018-04-01",
+      "train_orders": 39007,
+      "test_orders": 17386,
+      "test_items": 19801,
+      "test_users": 17081,
+      "known_users": 251,
+      "known_users_pct": 1.4694690006439903,
+      "known_product_items_pct": 57.34053835664865,
+      "both_known_items_pct": 0.9090449977273876,
+      "unseen_unique_products_pct": 62.20245251262323
+    },
+    {
+      "cut": "2018-04-01",
+      "end_exclusive": "2018-06-30",
+      "train_orders": 56393,
+      "test_orders": 16583,
+      "test_items": 19176,
+      "test_users": 16380,
+      "known_users": 345,
+      "known_users_pct": 2.1062271062271063,
+      "known_product_items_pct": 52.01814768460575,
+      "both_known_items_pct": 1.2411347517730498,
+      "unseen_unique_products_pct": 63.40854972219072
+    }
+  ],
+  "users_with_90d_followup": 65682,
+  "repeat_within90_share": 0.021664991930818184,
+  "spearman_items": {
+    "price": {
+      "price": 1.0,
+      "freight_value": 0.4538,
+      "product_weight_g": 0.5488,
+      "volume_l": 0.4209,
+      "product_description_lenght": 0.2395,
+      "product_photos_qty": 0.0528,
+      "distance_km": 0.1211
+    },
+    "freight_value": {
+      "price": 0.4538,
+      "freight_value": 1.0,
+      "product_weight_g": 0.4632,
+      "volume_l": 0.378,
+      "product_description_lenght": 0.1205,
+      "product_photos_qty": 0.011,
+      "distance_km": 0.6332
+    },
+    "product_weight_g": {
+      "price": 0.5488,
+      "freight_value": 0.4632,
+      "product_weight_g": 1.0,
+      "volume_l": 0.7719,
+      "product_description_lenght": 0.1046,
+      "product_photos_qty": -0.0,
+      "distance_km": 0.0389
+    },
+    "volume_l": {
+      "price": 0.4209,
+      "freight_value": 0.378,
+      "product_weight_g": 0.7719,
+      "volume_l": 1.0,
+      "product_description_lenght": 0.0326,
+      "product_photos_qty": -0.0292,
+      "distance_km": 0.0258
+    },
+    "product_description_lenght": {
+      "price": 0.2395,
+      "freight_value": 0.1205,
+      "product_weight_g": 0.1046,
+      "volume_l": 0.0326,
+      "product_description_lenght": 1.0,
+      "product_photos_qty": 0.0964,
+      "distance_km": 0.0333
+    },
+    "product_photos_qty": {
+      "price": 0.0528,
+      "freight_value": 0.011,
+      "product_weight_g": -0.0,
+      "volume_l": -0.0292,
+      "product_description_lenght": 0.0964,
+      "product_photos_qty": 1.0,
+      "distance_km": 0.01
+    },
+    "distance_km": {
+      "price": 0.1211,
+      "freight_value": 0.6332,
+      "product_weight_g": 0.0389,
+      "volume_l": 0.0258,
+      "product_description_lenght": 0.0333,
+      "product_photos_qty": 0.01,
+      "distance_km": 1.0
+    }
+  },
+  "spearman_products": {
+    "price": {
+      "price": 1.0,
+      "freight_value": 0.4954,
+      "product_weight_g": 0.5381,
+      "volume_l": 0.4243,
+      "product_description_lenght": 0.216,
+      "product_photos_qty": 0.0849,
+      "distance_km": 0.141
+    },
+    "freight_value": {
+      "price": 0.4954,
+      "freight_value": 1.0,
+      "product_weight_g": 0.4997,
+      "volume_l": 0.4106,
+      "product_description_lenght": 0.1263,
+      "product_photos_qty": 0.052,
+      "distance_km": 0.6003
+    },
+    "product_weight_g": {
+      "price": 0.5381,
+      "freight_value": 0.4997,
+      "product_weight_g": 1.0,
+      "volume_l": 0.7546,
+      "product_description_lenght": 0.1117,
+      "product_photos_qty": 0.0087,
+      "distance_km": 0.0489
+    },
+    "volume_l": {
+      "price": 0.4243,
+      "freight_value": 0.4106,
+      "product_weight_g": 0.7546,
+      "volume_l": 1.0,
+      "product_description_lenght": 0.0338,
+      "product_photos_qty": 0.0108,
+      "distance_km": 0.0214
+    },
+    "product_description_lenght": {
+      "price": 0.216,
+      "freight_value": 0.1263,
+      "product_weight_g": 0.1117,
+      "volume_l": 0.0338,
+      "product_description_lenght": 1.0,
+      "product_photos_qty": 0.1245,
+      "distance_km": 0.0475
+    },
+    "product_photos_qty": {
+      "price": 0.0849,
+      "freight_value": 0.052,
+      "product_weight_g": 0.0087,
+      "volume_l": 0.0108,
+      "product_description_lenght": 0.1245,
+      "product_photos_qty": 1.0,
+      "distance_km": 0.028
+    },
+    "distance_km": {
+      "price": 0.141,
+      "freight_value": 0.6003,
+      "product_weight_g": 0.0489,
+      "volume_l": 0.0214,
+      "product_description_lenght": 0.0475,
+      "product_photos_qty": 0.028,
+      "distance_km": 1.0
+    }
+  },
+  "geo_missing_rows": 493,
+  "geo_outside_rows": 4,
+  "distance_median_km": 430.9342545193901,
+  "freight_sensitivity": [
+    {
+      "выборка": "Все допустимые позиции",
+      "n": 95571,
+      "rho_distance_freight": 0.6331859276093019
+    },
+    {
+      "выборка": "Без верхнего 1% доставки/расстояния",
+      "n": 93710,
+      "rho_distance_freight": 0.6268864784172555
+    },
+    {
+      "выборка": "Пары заказ–товар",
+      "n": 86858,
+      "rho_distance_freight": 0.6367938948435744
+    },
+    {
+      "выборка": "Только health_beauty",
+      "n": 8007,
+      "rho_distance_freight": 0.7829520266140769
+    }
+  ],
+  "delivery_median_days": 10.14623263888889,
+  "delivery_p95_days": 29.045000578703693,
+  "late_share": 0.06591460225381579,
+  "late_orders": 5545,
+  "late_denominator": 84124,
+  "clean_delivery_median_days": 10.189027777777778,
+  "complete_case_sensitivity": [
+    {
+      "выборка": "Все строки",
+      "позиции": 96068,
+      "медиана цены": 69.9,
+      "один заказ, %": 97.15725831176954,
+      "товары в одной позиции, %": 57.11658223355167,
+      "top-1% товаров: доля позиций, %": 21.18499396260982
+    },
+    {
+      "выборка": "Полные по исходным 35 полям",
+      "позиции": 94022,
+      "медиана цены": 69.9,
+      "один заказ, %": 97.19459960423816,
+      "товары в одной позиции, %": 57.083443358859256,
+      "top-1% товаров: доля позиций, %": 21.12058879836634
+    }
+  ],
+  "missingness_monthly_max": {
+    "missing_card": 3.242617255356109,
+    "missing_geo": 0.8855362413906199
+  },
+  "missingness_state": {
+    "DF": {
+      "n": 2039,
+      "missing": 154,
+      "missing_geo": 7.552721922511036
+    },
+    "MA": {
+      "n": 714,
+      "missing": 3,
+      "missing_geo": 0.42016806722689076
+    },
+    "CE": {
+      "n": 1235,
+      "missing": 5,
+      "missing_geo": 0.4048582995951417
+    },
+    "GO": {
+      "n": 1988,
+      "missing": 8,
+      "missing_geo": 0.4024144869215292
+    },
+    "PB": {
+      "n": 526,
+      "missing": 2,
+      "missing_geo": 0.38022813688212925
+    },
+    "BA": {
+      "n": 3209,
+      "missing": 11,
+      "missing_geo": 0.3427859146151449
+    },
+    "MT": {
+      "n": 925,
+      "missing": 3,
+      "missing_geo": 0.3243243243243243
+    },
+    "ES": {
+      "n": 1913,
+      "missing": 5,
+      "missing_geo": 0.26136957658128596
+    },
+    "PA": {
+      "n": 919,
+      "missing": 2,
+      "missing_geo": 0.2176278563656148
+    },
+    "PE": {
+      "n": 1530,
+      "missing": 3,
+      "missing_geo": 0.19607843137254902
+    }
+  },
+  "df_missing_geo_prefixes": 58,
+  "categorical_width_observed": 25682
+}

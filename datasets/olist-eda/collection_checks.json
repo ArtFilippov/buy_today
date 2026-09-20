@@ -1,0 +1,14 @@
+{
+  "prepared_rows": 96068,
+  "prepared_columns": 35,
+  "full_duplicates": 0,
+  "key_duplicates": 0,
+  "keys_exactly_match_source_selection": true,
+  "source_items": 112650,
+  "delivered_items": 110197,
+  "fully_removed_delivered_orders": 12348,
+  "partial_retained_orders": 328,
+  "complete_retained_orders": 83802,
+  "source_orders_without_items": 775,
+  "rows_with_any_missing": 2046
+}

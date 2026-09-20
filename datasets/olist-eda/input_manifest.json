@@ -1,0 +1,87 @@
+{
+  "sources": [
+    {
+      "path": "dataset/olist_customers_dataset.csv",
+      "bytes": 9033957,
+      "sha256": "983a422239e1712ded753b3bf9ecf47dc73f144d306029dcfa99e70a226883d2"
+    },
+    {
+      "path": "dataset/olist_geolocation_dataset.csv",
+      "bytes": 61273883,
+      "sha256": "b514f6fc991b9566aeba02aa5d67e2c3630f034b60a0e05aa0d082a3b66d88d6"
+    },
+    {
+      "path": "dataset/olist_order_items_dataset.csv",
+      "bytes": 15438671,
+      "sha256": "0bc4d068c4fe38cbb01bd90e8746e3c613fe7b4baef75fab7b0e329701c3e279"
+    },
+    {
+      "path": "dataset/olist_order_payments_dataset.csv",
+      "bytes": 5777138,
+      "sha256": "4f713964f2815dbbaa40b9488268c55aac3627bfce5aa96cf58d1f3616de3cc0"
+    },
+    {
+      "path": "dataset/olist_order_reviews_dataset.csv",
+      "bytes": 14451670,
+      "sha256": "012b61c7593e34f51fa614efdf802b9c7056ce6aae5307ddb93236e7cfc797d7"
+    },
+    {
+      "path": "dataset/olist_orders_dataset.csv",
+      "bytes": 17654914,
+      "sha256": "8df58ef3d2d7e9944010f7beecd9b75367f5588ec6e3c91cec19ae3345ef9ecf"
+    },
+    {
+      "path": "dataset/olist_prepared_dataset.csv",
+      "bytes": 43326479,
+      "sha256": "9d47d6e021253339beeb7e5da4f16fa00f890a11364581c18ae5a0e46b5fd019"
+    },
+    {
+      "path": "dataset/olist_products_dataset.csv",
+      "bytes": 2379446,
+      "sha256": "3e6569628a17fbc75fd206ee357b59e20364b9afa90f5b6cd5b4d624c58aa9cc"
+    },
+    {
+      "path": "dataset/olist_sellers_dataset.csv",
+      "bytes": 174703,
+      "sha256": "1f643d2b950373b85735e7794b20986f528d7a000432e7c6f9bcbb44d0846a0e"
+    },
+    {
+      "path": "dataset/product_category_name_translation.csv",
+      "bytes": 2613,
+      "sha256": "a81f0d1f27b27e7293f761bc79e3ce8f348ee39c4b3ed3e49bde38f478586278"
+    },
+    {
+      "path": "prepare_data.ipynb",
+      "bytes": 436244,
+      "sha256": "04f810d8861dbcdb448df9757c2aa7ac5dc28dac988c714853f24a40885c63b9"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "datasets/olist-eda/source_reference.csv.gz",
+      "rows": 112650,
+      "columns": [
+        "order_id",
+        "order_item_id",
+        "product_id",
+        "price",
+        "freight_value",
+        "order_status",
+        "order_purchase_timestamp",
+        "customer_unique_id",
+        "category",
+        "source_seller_count",
+        "kept"
+      ],
+      "sha256": "db99e78972ece2bcf3200b683ee2b141913ca91d25752e286b2a2b5c0d656b98"
+    }
+  ],
+  "environment": {
+    "pandas": "3.0.6",
+    "numpy": "2.5.3",
+    "matplotlib": "3.11.2",
+    "nbformat": "5.11.1",
+    "nbclient": "0.11.0",
+    "ipykernel": "7.3.0"
+  }
+}
