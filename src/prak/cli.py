@@ -12,6 +12,7 @@ from prak.clustering.report import report_clustering
 from prak.clustering.training import train_clustering
 from prak.generation import generate_dataset
 from prak.preparation import prepare_data
+from prak.ranking import RandomRanker, report_ranking, train_ranker
 from prak.update import initialize_reference, update_reference
 
 
@@ -142,6 +143,23 @@ def main(argv: list[str] | None = None) -> None:
         help="покупки на пользователя: сначала 70 15 15; затем наследуются из предыдущего снимка",
     )
     generate.add_argument("--random-state", type=_random_state, default=42)
+    rank = commands.add_parser(
+        "rank", help="обучить ранжировщик на train и сохранить модель",
+        description="Случайный бейзлайн на накопленном train и полном каталоге товаров.",
+    )
+    rank.add_argument("--dataset-dir", type=Path, required=True, help="снимок модельных историй")
+    rank.add_argument("--output-dir", type=Path, required=True, help="новый каталог модели")
+    rank.add_argument("--model", choices=["random"], default="random")
+    rank.add_argument("--random-state", type=_random_state, default=42)
+    ranking_evaluate = commands.add_parser(
+        "evaluate-ranking", help="оценить сохранённый ранжировщик: Recall@K и NDCG@K",
+        description="Независимая оценка выбранного split без обучения; JSON и CSV по пользователям.",
+    )
+    ranking_evaluate.add_argument("--dataset-dir", type=Path, required=True, help="снимок модельных историй")
+    ranking_evaluate.add_argument("--model-dir", type=Path, required=True, help="каталог готового ранжировщика")
+    ranking_evaluate.add_argument("--output-dir", type=Path, required=True, help="новый каталог оценки")
+    ranking_evaluate.add_argument("--split", choices=["validation", "test"], required=True)
+    ranking_evaluate.add_argument("--k", type=_positive_int, default=10)
     evaluate = commands.add_parser(
         "evaluate", help="оценить сохранённые метки: силуэт и отчёт с t-SNE",
         description="Независимая оценка без обучения: выполненный notebook и самодостаточный HTML.",
@@ -184,6 +202,14 @@ def main(argv: list[str] | None = None) -> None:
                 previous_dir=args.previous_dir, n_users=args.n_users,
                 split_sizes=args.split_sizes, random_state=args.random_state,
             )
+        elif args.command == "rank":
+            ranking_model = train_ranker(
+                args.dataset_dir, args.output_dir, ranker=RandomRanker(random_state=args.random_state),
+            )
+        elif args.command == "evaluate-ranking":
+            ranking_report = report_ranking(
+                args.dataset_dir, args.model_dir, args.output_dir, split=args.split, k=args.k,
+            )
         else:
             thresholds = DriftThresholds(
                 price=args.price_threshold, category=args.category_threshold,
@@ -201,6 +227,16 @@ def main(argv: list[str] | None = None) -> None:
         # CLI boundary: data, kernel, rendering and filesystem errors all exit 1.
         stage = "подготовки" if args.command == "prepare" else args.command
         parser.exit(1, f"Ошибка {stage}: {exc}\n")
+
+    if args.command == "rank":
+        print(f"Модель: {ranking_model.model_path}")
+        print(f"Манифест: {ranking_model.manifest_path}")
+        return
+
+    if args.command == "evaluate-ranking":
+        print(f"Метрики: {ranking_report.metrics_path}")
+        print(f"По пользователям: {ranking_report.per_user_path}")
+        return
 
     if args.command == "generate":
         print(f"Истории: {histories.output_dir}")
