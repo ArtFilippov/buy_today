@@ -10,6 +10,7 @@ from prak.clustering.distances import TimestampDistance
 from prak.clustering.models.temporal import train_temporal
 from prak.clustering.report import report_clustering
 from prak.clustering.training import train_clustering
+from prak.generation import generate_dataset
 from prak.preparation import prepare_data
 from prak.update import initialize_reference, update_reference
 
@@ -42,6 +43,17 @@ def _random_state(value: str) -> int:
     except ValueError as exc:
         raise argparse.ArgumentTypeError(message) from exc
     if not 0 <= number <= 2**32 - 1:
+        raise argparse.ArgumentTypeError(message)
+    return number
+
+
+def _positive_float(value: str) -> float:
+    message = "ожидается конечное положительное число"
+    try:
+        number = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(message) from exc
+    if not isfinite(number) or number <= 0:
         raise argparse.ArgumentTypeError(message)
     return number
 
@@ -111,7 +123,25 @@ def main(argv: list[str] | None = None) -> None:
     cluster.add_argument("--output-dir", type=Path, required=True, help="каталог модели данного шага")
     cluster.add_argument("--model", choices=["temporal"], default="temporal")
     cluster.add_argument("--distance", choices=["timestamp"], default="timestamp")
-    cluster.add_argument("--n-clusters", type=_positive_int, default=20)
+    cluster.add_argument(
+        "--temporal-n-clusters", type=_positive_int,
+        help="число групп temporal; по умолчанию определяется реализацией модели",
+    )
+    generate = commands.add_parser(
+        "generate", help="создать и накопить модельные пользовательские истории",
+        description="Новые истории из нового батча и готового расстояния; прежние истории сохраняются.",
+    )
+    generate.add_argument("--batch", type=Path, required=True, help="CSV только нового батча")
+    generate.add_argument("--distance", type=Path, required=True, help="готовое расстояние в joblib")
+    generate.add_argument("--output-dir", type=Path, required=True, help="новый каталог накопленного снимка")
+    generate.add_argument("--previous-dir", type=Path, help="предыдущий снимок историй")
+    generate.add_argument("--temperature", type=_positive_float, required=True, help="температура в единицах расстояния")
+    generate.add_argument("--n-users", type=_positive_int, help="новые пользователи: по умолчанию 2000, затем 250")
+    generate.add_argument(
+        "--split-sizes", type=_positive_int, nargs=3, metavar=("TRAIN", "VALIDATION", "TEST"),
+        help="покупки на пользователя: сначала 70 15 15; затем наследуются из предыдущего снимка",
+    )
+    generate.add_argument("--random-state", type=_random_state, default=42)
     evaluate = commands.add_parser(
         "evaluate", help="оценить сохранённые метки: силуэт и отчёт с t-SNE",
         description="Независимая оценка без обучения: выполненный notebook и самодостаточный HTML.",
@@ -133,19 +163,26 @@ def main(argv: list[str] | None = None) -> None:
         elif args.command == "init":
             report = initialize_reference(args.batch, args.reference, args.output_dir)
         elif args.command == "cluster":
-            strategies = {"temporal": train_temporal}
             distances = {"timestamp": TimestampDistance}
+            temporal_options = {}
+            if args.temporal_n_clusters is not None:
+                temporal_options["n_clusters"] = args.temporal_n_clusters
             artifacts = train_clustering(
                 args.batch, args.output_dir,
                 strategy=partial(
-                    strategies[args.model], n_clusters=args.n_clusters,
-                    distance=distances[args.distance](),
+                    train_temporal, distance=distances[args.distance](), **temporal_options,
                 ),
             )
         elif args.command == "evaluate":
             report = report_clustering(
                 args.dataset, args.new_batch, args.model_dir,
                 max_evaluation_rows=args.max_evaluation_rows, random_state=args.random_state,
+            )
+        elif args.command == "generate":
+            histories = generate_dataset(
+                args.batch, args.distance, args.output_dir, temperature=args.temperature,
+                previous_dir=args.previous_dir, n_users=args.n_users,
+                split_sizes=args.split_sizes, random_state=args.random_state,
             )
         else:
             thresholds = DriftThresholds(
@@ -164,6 +201,15 @@ def main(argv: list[str] | None = None) -> None:
         # CLI boundary: data, kernel, rendering and filesystem errors all exit 1.
         stage = "подготовки" if args.command == "prepare" else args.command
         parser.exit(1, f"Ошибка {stage}: {exc}\n")
+
+    if args.command == "generate":
+        print(f"Истории: {histories.output_dir}")
+        print(f"Train: {histories.train_path}")
+        print(f"Validation: {histories.validation_path}")
+        print(f"Test: {histories.test_path}")
+        print(f"Каталог: {histories.catalog_path}")
+        print(f"Манифест генератора: {histories.manifest_path}")
+        return
 
     if args.command == "cluster":
         print(f"Модель: {artifacts.model_path}")

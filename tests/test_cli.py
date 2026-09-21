@@ -90,6 +90,7 @@ def test_prepare_no_categories_is_failure(raw_tables, write_raw, tmp_path):
 @pytest.mark.parametrize("args", [
     ["--help"], ["prepare", "--help"], ["eda", "--help"], ["init", "--help"],
     ["deda", "--help"], ["update", "--help"], ["cluster", "--help"], ["evaluate", "--help"],
+    ["generate", "--help"],
 ])
 def test_help(tmp_path, args):
     result = run_cli(*args, cwd=tmp_path)
@@ -97,6 +98,9 @@ def test_help(tmp_path, args):
     assert "prak" in result.stdout
     if args[0] == "prepare":
         assert "--min-category-count" in result.stdout
+    if args[0] == "cluster":
+        assert "--temporal-n-clusters" in result.stdout
+        assert "--n-clusters" not in result.stdout
     if args[0] in {"deda", "update"}:
         for name in ("batch", "reference", "output-dir", "price-threshold", "category-threshold", "state-threshold"):
             assert f"--{name}" in result.stdout
@@ -363,7 +367,7 @@ def test_cluster_then_evaluate_from_another_cwd(working_frame, write_dataset, tm
     model_dir = tmp_path / "model ' dir"
     result = run_cli(
         "cluster", "--batch", dataset.name, "--output-dir", model_dir.name,
-        "--model", "temporal", "--distance", "timestamp", "--n-clusters", "3", cwd=tmp_path,
+        "--model", "temporal", "--distance", "timestamp", "--temporal-n-clusters", "3", cwd=tmp_path,
     )
     assert result.returncode == 0, result.stderr
     artifacts = {path: path.read_bytes() for path in model_dir.iterdir()}
@@ -383,7 +387,10 @@ def test_cluster_then_evaluate_from_another_cwd(working_frame, write_dataset, tm
 
 @pytest.mark.parametrize("args", [
     ["cluster"], ["evaluate"],
-    ["cluster", "--batch", "a", "--output-dir", "b", "--n-clusters", "0"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--temporal-n-clusters", "0"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--temporal-n-clusters", "-1"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--temporal-n-clusters", "1.5"],
+    ["cluster", "--batch", "a", "--output-dir", "b", "--n-clusters", "3"],
     ["cluster", "--batch", "a", "--output-dir", "b", "--model", "unknown"],
     ["cluster", "--batch", "a", "--output-dir", "b", "--distance", "unknown"],
     ["cluster", "--batch", "a", "--output-dir", "b", "--timestamp-column", "time"],
@@ -415,3 +422,27 @@ def test_cluster_too_many_clusters_is_data_error(working_frame, write_dataset, t
     result = run_cli("cluster", "--batch", dataset.name, "--output-dir", "model", cwd=tmp_path)
     assert result.returncode == 1
     assert "n_samples must be >= n_clusters" in result.stderr
+
+
+@pytest.mark.parametrize("override", [None, 3])
+def test_cluster_leaves_default_to_temporal(monkeypatch, tmp_path, override):
+    from prak.clustering.training import TrainingPaths
+
+    calls = []
+
+    def strategy(frame, **kwargs):
+        calls.append(kwargs)
+
+    def train(batch_path, output_dir, *, strategy):
+        strategy(object())
+        return TrainingPaths(*(tmp_path / name for name in ("model", "distance", "labels")))
+
+    monkeypatch.setattr("prak.cli.train_temporal", strategy)
+    monkeypatch.setattr("prak.cli.train_clustering", train)
+    args = ["cluster", "--batch", "batch.csv", "--output-dir", "model"]
+    if override is not None:
+        args.extend(["--temporal-n-clusters", str(override)])
+    main(args)
+    assert len(calls) == 1
+    calls[0].pop("distance")
+    assert calls[0] == ({} if override is None else {"n_clusters": override})
