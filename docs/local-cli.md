@@ -6,11 +6,11 @@
 
 ```bash
 uv sync --frozen
-uv run prak --help
+uv run buy_today --help
 ```
 
 Примеры ниже — для Bash. Относительные пути разрешаются от рабочего каталога
-команды. Подробная справка: `uv run prak <команда> --help`.
+команды. Подробная справка: `uv run buy_today <команда> --help`.
 Коды завершения: `0` — успех, `2` — неверные аргументы, `1` — ошибка исполнения.
 У `run`, `inference`, `summary` ошибки исполнения выходят с traceback.
 
@@ -19,7 +19,7 @@ uv run prak --help
 Заранее распакуйте [исходные CSV](data.md#исходные-файлы) в `dataset/`:
 
 ```bash
-uv run prak prepare --raw-dir dataset --output-dir data/olist-stream \
+uv run buy_today prepare --raw-dir dataset --output-dir data/olist-stream \
   --batch-size 5000 --min-category-count 1000
 ```
 
@@ -32,11 +32,11 @@ uv run prak prepare --raw-dir dataset --output-dir data/olist-stream \
 При первом вызове обязательны подготовленный `--data-dir` и **новый** `--run-dir`:
 
 ```bash
-uv run prak run --data-dir data/olist-stream \
+uv run buy_today run --data-dir data/olist-stream \
   --run-dir models/olist-stream/runs/example --model svd
-uv run prak run --run-dir models/olist-stream/runs/example
-uv run prak run --run-dir models/olist-stream/runs/example --all
-uv run prak summary --run-dir models/olist-stream/runs/example
+uv run buy_today run --run-dir models/olist-stream/runs/example
+uv run buy_today run --run-dir models/olist-stream/runs/example --all
+uv run buy_today summary --run-dir models/olist-stream/runs/example
 ```
 
 Выберите отсутствующий каталог для нового эксперимента. Один прогон использует
@@ -72,12 +72,12 @@ uv run prak summary --run-dir models/olist-stream/runs/example
 ## Inference и summary
 
 ```bash
-uv run prak inference \
+uv run buy_today inference \
   --model-dir models/olist-stream/runs/example/steps/step_000/ranking \
   --user-id user_000000_000000 --k 10 \
   --output models/olist-stream/runs/example/recommendations.csv
 
-uv run prak summary --run-dir models/olist-stream/runs/example
+uv run buy_today summary --run-dir models/olist-stream/runs/example
 ```
 
 Для локального inference `--model-dir`, `--user-id`, `--output` обязательны;
@@ -93,9 +93,9 @@ K по умолчанию 10. Модель выбирается явно, пол
 Отдельный EDA и создание эталона из первого батча:
 
 ```bash
-uv run prak eda --dataset data/olist-stream/batches/batch_000.csv \
+uv run buy_today eda --dataset data/olist-stream/batches/batch_000.csv \
   --output-dir data/manual-reports/eda
-uv run prak init --batch data/olist-stream/batches/batch_000.csv \
+uv run buy_today init --batch data/olist-stream/batches/batch_000.csv \
   --reference data/olist-stream/reference.csv \
   --output-dir data/olist-stream/reports/step_000
 ```
@@ -103,10 +103,10 @@ uv run prak init --batch data/olist-stream/batches/batch_000.csv \
 Сравнение со следующим батчем и обновление эталона:
 
 ```bash
-uv run prak deda --reference data/olist-stream/reference.csv \
+uv run buy_today deda --reference data/olist-stream/reference.csv \
   --batch data/olist-stream/batches/batch_001.csv \
   --output-dir data/manual-reports/deda
-uv run prak update --reference data/olist-stream/reference.csv \
+uv run buy_today update --reference data/olist-stream/reference.csv \
   --batch data/olist-stream/batches/batch_001.csv \
   --output-dir data/olist-stream/reports/step_001
 ```
@@ -130,10 +130,10 @@ uv run prak update --reference data/olist-stream/reference.csv \
 Для отдельного эксперимента достаточно первого батча, предварительный `init` не нужен:
 
 ```bash
-uv run prak cluster --batch data/olist-stream/batches/batch_000.csv \
+uv run buy_today cluster --batch data/olist-stream/batches/batch_000.csv \
   --output-dir models/olist-stream/clustering/example/step_000 \
   --model temporal --distance timestamp --temporal-n-clusters 20
-uv run prak evaluate --dataset data/olist-stream/batches/batch_000.csv \
+uv run buy_today evaluate --dataset data/olist-stream/batches/batch_000.csv \
   --new-batch data/olist-stream/batches/batch_000.csv \
   --model-dir models/olist-stream/clustering/example/step_000 \
   --max-evaluation-rows 1000 --random-state 42
@@ -159,10 +159,10 @@ uv run prak evaluate --dataset data/olist-stream/batches/batch_000.csv \
 После сохранения расстояния командой `cluster`:
 
 ```bash
-uv run prak generate --batch data/olist-stream/batches/batch_000.csv \
+uv run buy_today generate --batch data/olist-stream/batches/batch_000.csv \
   --distance models/olist-stream/clustering/example/step_000/distance.joblib \
   --output-dir data/olist-stream/histories/example/step_000 --temperature 86400
-uv run prak generate --batch data/olist-stream/batches/batch_001.csv \
+uv run buy_today generate --batch data/olist-stream/batches/batch_001.csv \
   --distance models/olist-stream/clustering/example/step_000/distance.joblib \
   --output-dir data/olist-stream/histories/example/step_001 \
   --previous-dir data/olist-stream/histories/example/step_000 --temperature 86400
@@ -190,14 +190,14 @@ uv run prak generate --batch data/olist-stream/batches/batch_001.csv \
 
 ```bash
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
-uv run prak rank --dataset-dir data/olist-stream/histories/example/step_000 \
+uv run buy_today rank --dataset-dir data/olist-stream/histories/example/step_000 \
   --model svd --svd-n-components 32 --svd-n-iter 7 --random-state 42 \
   --output-dir models/olist-stream/ranking/example/step_000
-uv run prak evaluate-ranking --dataset-dir data/olist-stream/histories/example/step_000 \
+uv run buy_today evaluate-ranking --dataset-dir data/olist-stream/histories/example/step_000 \
   --model-dir models/olist-stream/ranking/example/step_000 \
   --split validation --k 10 --output-dir models/olist-stream/ranking/example/step_000/validation
 # Test запускайте после фиксации настроек по validation.
-uv run prak evaluate-ranking --dataset-dir data/olist-stream/histories/example/step_000 \
+uv run buy_today evaluate-ranking --dataset-dir data/olist-stream/histories/example/step_000 \
   --model-dir models/olist-stream/ranking/example/step_000 \
   --split test --k 10 --output-dir models/olist-stream/ranking/example/step_000/test
 ```
@@ -225,10 +225,10 @@ uv run prak evaluate-ranking --dataset-dir data/olist-stream/histories/example/s
 и `catalog.csv`. Внутренние пути pipeline автоматически не разыскиваются.
 
 ```bash
-uv run prak benchmark-ranking --output models/ranking-benchmark \
+uv run buy_today benchmark-ranking --output models/ranking-benchmark \
   --dataset data/olist-stream/histories/example/step_000 \
   --model random --model "svd --n-components 16 --n-iter 7" --k 10
-uv run prak benchmark-ranking-report models/ranking-benchmark \
+uv run buy_today benchmark-ranking-report models/ranking-benchmark \
   --output models/ranking-benchmark-report/comparison.html
 ```
 
@@ -289,7 +289,7 @@ Recall/NDCG со шкалами 0–1, сравнения датасетов, т
 датасеты и модели не загружаются, обучение не запускается.
 
 ```python
-from prak.ranking import run_ranking_benchmark, report_ranking_benchmark
+from buy_today.ranking import run_ranking_benchmark, report_ranking_benchmark
 
 runs = run_ranking_benchmark(
     ["data/olist-stream/histories/example/step_000"], "models/ranking-benchmark",

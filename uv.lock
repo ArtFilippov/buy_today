@@ -167,6 +167,49 @@ css = [
 ]
 
 [[package]]
+name = "buy-today"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "ipykernel" },
+    { name = "joblib" },
+    { name = "jupyterlab" },
+    { name = "matplotlib" },
+    { name = "nbclient" },
+    { name = "nbconvert" },
+    { name = "nbformat" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "threadpoolctl" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ipykernel", specifier = ">=6.29" },
+    { name = "joblib", specifier = ">=1.4" },
+    { name = "jupyterlab", specifier = ">=4.6.3" },
+    { name = "matplotlib", specifier = ">=3.10.0" },
+    { name = "nbclient", specifier = ">=0.10" },
+    { name = "nbconvert", specifier = ">=7.16" },
+    { name = "nbformat", specifier = ">=5.10" },
+    { name = "numpy", specifier = ">=2.1.0" },
+    { name = "pandas", specifier = ">=3.0.6" },
+    { name = "scikit-learn", specifier = ">=1.6.0" },
+    { name = "scipy", specifier = ">=1.14.1" },
+    { name = "threadpoolctl", specifier = ">=3.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.3" }]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -1505,49 +1548,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
 ]
-
-[[package]]
-name = "prak"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "ipykernel" },
-    { name = "joblib" },
-    { name = "jupyterlab" },
-    { name = "matplotlib" },
-    { name = "nbclient" },
-    { name = "nbconvert" },
-    { name = "nbformat" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "threadpoolctl" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "ipykernel", specifier = ">=6.29" },
-    { name = "joblib", specifier = ">=1.4" },
-    { name = "jupyterlab", specifier = ">=4.6.3" },
-    { name = "matplotlib", specifier = ">=3.10.0" },
-    { name = "nbclient", specifier = ">=0.10" },
-    { name = "nbconvert", specifier = ">=7.16" },
-    { name = "nbformat", specifier = ">=5.10" },
-    { name = "numpy", specifier = ">=2.1.0" },
-    { name = "pandas", specifier = ">=3.0.6" },
-    { name = "scikit-learn", specifier = ">=1.6.0" },
-    { name = "scipy", specifier = ">=1.14.1" },
-    { name = "threadpoolctl", specifier = ">=3.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3" }]
 
 [[package]]
 name = "prometheus-client"

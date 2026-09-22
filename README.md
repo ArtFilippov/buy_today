@@ -1,4 +1,4 @@
-# Рекомендательная система списка покупок
+# buy_today — рекомендательная система списка покупок
 
 Используется датасет [Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 с реальными позициями заказов. ML-задача — рекомендательная система списка покупок:
@@ -13,15 +13,15 @@ Windows PowerShell, из корня репозитория. Python и uv на Wi
 Сборка выполняется одной командой; нужен Интернет для автоматической загрузки CSV Olist:
 
 ```powershell
-docker build -t prak:local .
+docker build -t buy_today:local .
 ```
 
 Замените `<workdir>` на абсолютный путь к папке результатов, например
-`C:\prak-workspace`. Используйте одну и ту же папку во всех командах;
+`C:\buy_today-workspace`. Используйте одну и ту же папку во всех командах;
 Docker создаст её при первом запуске:
 
 ```powershell
-docker run --rm -v "<workdir>:/workspace" prak:local init --verbose
+docker run --rm -v "<workdir>:/workspace" buy_today:local init --verbose
 ```
 
 `init` выгружает исходные CSV, подготавливает весь поток, обрабатывает **первый
@@ -30,7 +30,7 @@ docker run --rm -v "<workdir>:/workspace" prak:local init --verbose
 старые `logs/` сохраняются. Для продолжения используйте `update`:
 
 ```powershell
-docker run --rm -v "<workdir>:/workspace" prak:local update --verbose
+docker run --rm -v "<workdir>:/workspace" buy_today:local update --verbose
 ```
 
 Каждый `update` обрабатывает **один следующий батч** и обновляет сводку.
@@ -40,7 +40,7 @@ docker run --rm -v "<workdir>:/workspace" prak:local update --verbose
 Рекомендации из явно выбранной модели первого шага:
 
 ```powershell
-docker run --rm -v "<workdir>:/workspace" prak:local inference --model-dir run/steps/step_000/ranking --user-id user_000000_000000 --k 10 --verbose
+docker run --rm -v "<workdir>:/workspace" buy_today:local inference --model-dir run/steps/step_000/ranking --user-id user_000000_000000 --k 10 --verbose
 ```
 
 `user_id` — известный модели синтетический пользователь, не `customer_unique_id`

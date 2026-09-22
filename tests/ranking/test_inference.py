@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.ranking import RandomRanker, SVDRanker, train_ranker
-from prak.ranking.inference import export_recommendations, recommend
+from buy_today.ranking import RandomRanker, SVDRanker, train_ranker
+from buy_today.ranking.inference import export_recommendations, recommend
 
 
 def contents(directory):
@@ -90,7 +90,7 @@ def test_integrity_is_checked_before_deserialization(saved_model, tmp_path, monk
     def forbidden_load(*args, **kwargs):
         pytest.fail("Invalid artifacts must be rejected before joblib.load")
 
-    monkeypatch.setattr("prak.ranking.inference.joblib.load", forbidden_load)
+    monkeypatch.setattr("buy_today.ranking.inference.joblib.load", forbidden_load)
     with pytest.raises(ValueError, match=message):
         recommend(model_dir, "001")
     output = tmp_path / "recommendations.csv"
@@ -183,7 +183,7 @@ def test_export_propagates_underlying_errors(saved_model, tmp_path, monkeypatch,
         raise error
 
     if stage == "load":
-        monkeypatch.setattr("prak.ranking.inference.joblib.load", fail)
+        monkeypatch.setattr("buy_today.ranking.inference.joblib.load", fail)
     elif stage == "predict":
         monkeypatch.setattr(type(model), "predict", fail)
     else:

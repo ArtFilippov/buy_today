@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.auto_eda.drift import (
+from buy_today.auto_eda.drift import (
     DriftResult,
     DriftThresholds,
     evaluate_drift,

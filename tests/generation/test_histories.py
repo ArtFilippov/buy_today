@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.clustering.distances import TimestampDistance
-from prak.generation.histories import GeneratedHistories, generate_histories
-from prak.schema import ROW_KEY
+from buy_today.clustering.distances import TimestampDistance
+from buy_today.generation.histories import GeneratedHistories, generate_histories
+from buy_today.schema import ROW_KEY
 
 
 PROVENANCE_COLUMNS = [

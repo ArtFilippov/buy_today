@@ -9,17 +9,17 @@ Python и uv на хосте не нужны. Рабочая папка резу
 Сборка выполняется одной командой из корня репозитория; нужен Интернет для загрузки Olist:
 
 ```powershell
-docker build -t prak:local .
+docker build -t buy_today:local .
 ```
 
 [Dockerfile](../Dockerfile) использует Python 3.13 slim, uv 0.12.6 и
 `uv sync --frozen`. Пакет устанавливается не в editable-режиме. Зависимости
 notebook входят в runtime; служебные файлы ядра и кеши находятся в `/tmp`.
-Точка входа — `python -m prak.container_cli`, рабочий каталог — `/workspace`.
+Точка входа — `python -m buy_today.container_cli`, рабочий каталог — `/workspace`.
 
 Стадия `olist-data` скачивает ZIP [Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 через публичный Kaggle API. Проверяются ZIP/CRC и точный набор девяти непустых
-исходных CSV; файлы помещаются в `/opt/prak/olist`. Локальный `dataset/` для
+исходных CSV; файлы помещаются в `/opt/buy_today/olist`. Локальный `dataset/` для
 сборки не нужен. Версия датасета и ожидаемые контрольные суммы не закреплены;
 исследовательский `olist_prepared_dataset.csv` в образ не входит.
 
@@ -29,19 +29,19 @@ notebook входят в runtime; служебные файлы ядра и ке
 ## Рабочая папка и команды
 
 ```powershell
-$WorkDir = Join-Path $env:USERPROFILE 'prak-workspace'
+$WorkDir = Join-Path $env:USERPROFILE 'buy_today-workspace'
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
 
 docker run --rm --mount "type=bind,source=$WorkDir,target=/workspace" `
-    prak:local init --verbose
+    buy_today:local init --verbose
 if ($LASTEXITCODE -ne 0) { throw 'init failed; see workspace logs' }
 
 docker run --rm --mount "type=bind,source=$WorkDir,target=/workspace" `
-    prak:local update --verbose
+    buy_today:local update --verbose
 if ($LASTEXITCODE -ne 0) { throw 'update failed; see workspace logs' }
 
 docker run --rm --mount "type=bind,source=$WorkDir,target=/workspace" `
-    prak:local inference --model-dir run/steps/step_000/ranking `
+    buy_today:local inference --model-dir run/steps/step_000/ranking `
     --user-id user_000000_000000 --k 10 --verbose
 if ($LASTEXITCODE -ne 0) { throw 'inference failed; see workspace logs' }
 ```
@@ -78,7 +78,7 @@ CSV заново. Сброс и полный шаг не являются тра
 
 ## Параметры
 
-Справка: `docker run --rm prak:local init --help` и аналогично для других команд.
+Справка: `docker run --rm buy_today:local init --help` и аналогично для других команд.
 Параметры передаются после имени команды.
 
 - `init`: `--batch-size` (5000), `--min-category-count` (1000) и
@@ -96,7 +96,7 @@ CSV заново. Сброс и полный шаг не являются тра
   Без `--output` создаётся CSV с уникальным именем.
 
 Контейнерные `init`/`update` выполняют полный цикл. Одноимённые локальные команды
-`uv run prak init/update` работают только с эталоном и EDA/DEDA.
+`uv run buy_today init/update` работают только с эталоном и EDA/DEDA.
 
 ## Логи и ошибки
 
@@ -119,12 +119,12 @@ CSV заново. Сброс и полный шаг не являются тра
 Стадия `tests` устанавливает dev-зависимости и тесты, не скачивая Olist:
 
 ```powershell
-docker build --target tests -t prak-tests:local .
+docker build --target tests -t buy_today-tests:local .
 if ($LASTEXITCODE -ne 0) { throw 'Tests image build failed' }
-docker run --rm --network none prak-tests:local
+docker run --rm --network none buy_today-tests:local
 if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
 
-$CheckDir = Join-Path $env:TEMP ('prak-smoke-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$CheckDir = Join-Path $env:TEMP ('buy_today-smoke-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-smoke.ps1 -Root $CheckDir
 if ($LASTEXITCODE -ne 0) { throw 'Docker smoke check failed' }
 ```

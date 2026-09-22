@@ -3,7 +3,7 @@
 FROM ghcr.io/astral-sh/uv:0.12.6 AS uv
 
 FROM python:3.13-slim AS base
-ENV VIRTUAL_ENV=/opt/prak/venv \
+ENV VIRTUAL_ENV=/opt/buy_today/venv \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     HOME=/tmp \
@@ -19,7 +19,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 FROM base AS dependencies
 COPY --from=uv /uv /usr/local/bin/uv
-ENV UV_PROJECT_ENVIRONMENT=/opt/prak/venv \
+ENV UV_PROJECT_ENVIRONMENT=/opt/buy_today/venv \
     UV_PYTHON_DOWNLOADS=never \
     UV_LINK_MODE=copy \
     UV_CACHE_DIR=/tmp/uv-cache
@@ -44,13 +44,13 @@ CMD ["-q"]
 
 # Only the stdlib downloader affects this layer's cache, not the application.
 FROM base AS olist-data
-COPY src/prak/bundled_data.py /tmp/bundled_data.py
-RUN python /tmp/bundled_data.py /opt/prak/olist
+COPY src/buy_today/bundled_data.py /tmp/bundled_data.py
+RUN python /tmp/bundled_data.py /opt/buy_today/olist
 
 # Keep runtime last so an ordinary build selects the application image.
 FROM base AS runtime
-COPY --from=package /opt/prak/venv /opt/prak/venv
-COPY --from=olist-data /opt/prak/olist /opt/prak/olist
+COPY --from=package /opt/buy_today/venv /opt/buy_today/venv
+COPY --from=olist-data /opt/buy_today/olist /opt/buy_today/olist
 WORKDIR /workspace
-ENTRYPOINT ["python", "-m", "prak.container_cli"]
+ENTRYPOINT ["python", "-m", "buy_today.container_cli"]
 CMD ["--help"]

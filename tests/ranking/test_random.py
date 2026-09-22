@@ -12,8 +12,8 @@ from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
-from prak.ranking.data import RankingData
-from prak.ranking.random import RandomRanker
+from buy_today.ranking.data import RankingData
+from buy_today.ranking.random import RandomRanker
 
 
 @pytest.fixture

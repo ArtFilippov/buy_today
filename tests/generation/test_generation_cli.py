@@ -6,9 +6,9 @@ import joblib
 import pandas as pd
 import pytest
 
-from prak.cli import main
-from prak.clustering.distances import TimestampDistance
-from prak.generation import read_history_dataset
+from buy_today.cli import main
+from buy_today.clustering.distances import TimestampDistance
+from buy_today.generation import read_history_dataset
 
 
 def test_generate_two_steps_from_another_cwd(working_frame, new_batch, write_dataset, tmp_path):
@@ -18,7 +18,7 @@ def test_generate_two_steps_from_another_cwd(working_frame, new_batch, write_dat
     joblib.dump(TimestampDistance(), distance)
     for index, batch in enumerate((batch0, batch1)):
         args = [
-            str(Path(sys.executable).with_name("prak")), "generate",
+            str(Path(sys.executable).with_name("buy_today")), "generate",
             "--batch", batch.name, "--distance", distance.name,
             "--output-dir", f"step {index}", "--temperature", "86400", "--n-users", "2",
             "--random-state", "17",

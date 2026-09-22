@@ -3,9 +3,9 @@ import pandas as pd
 import pytest
 from sklearn.base import clone
 
-from prak.clustering.distances import TimestampDistance
-from prak.clustering.models.temporal import TemporalClustering
-from prak.schema import SORT_KEY
+from buy_today.clustering.distances import TimestampDistance
+from buy_today.clustering.models.temporal import TemporalClustering
+from buy_today.schema import SORT_KEY
 
 
 def test_sorted_equal_groups_preserve_input_order_and_do_not_mutate(working_frame):

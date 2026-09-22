@@ -10,11 +10,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.ranking import (
+from buy_today.ranking import (
     RandomRanker, SVDRanker, parse_model_spec, read_latest_benchmark_runs,
     read_ranking_data, report_ranking, run_ranking_benchmark,
 )
-from prak.ranking import benchmark
+from buy_today.ranking import benchmark
 
 
 def read_json(path):

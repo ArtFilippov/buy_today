@@ -16,10 +16,10 @@ import matplotlib.image as mpimg
 import pandas as pd
 import pytest
 
-from prak.ranking.benchmark import run_ranking_benchmark
-from prak.ranking.benchmark_report import BenchmarkReportPaths, report_ranking_benchmark
-from prak.ranking.random import RandomRanker
-from prak.ranking.svd import SVDRanker
+from buy_today.ranking.benchmark import run_ranking_benchmark
+from buy_today.ranking.benchmark_report import BenchmarkReportPaths, report_ranking_benchmark
+from buy_today.ranking.random import RandomRanker
+from buy_today.ranking.svd import SVDRanker
 
 
 _FIRST = "20260922T100000000000Z"
@@ -75,7 +75,7 @@ def _committed_run(root, model, scores, *, run_id=_FIRST, k=2, saved=False,
         "format_version": 1, "kind": "ranking_benchmark", "run_id": run_id,
         "invocation_id": invocation, "created_at": "2026-09-22T10:00:00+00:00",
         "model": {"name": model, "algorithm": algorithm,
-                  "class": f"prak.ranking.{algorithm}.{class_name}", "parameters": parameters},
+                  "class": f"buy_today.ranking.{algorithm}.{class_name}", "parameters": parameters},
         "k": k, "save_model": saved, "versions": {"numpy": "2.1.0", "scikit_learn": "1.6.0"},
         "datasets": {},
     }

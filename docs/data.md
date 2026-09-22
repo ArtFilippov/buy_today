@@ -41,7 +41,7 @@
 ## Правила подготовки
 
 ```bash
-uv run prak prepare --raw-dir dataset --output-dir data/olist-stream \
+uv run buy_today prepare --raw-dir dataset --output-dir data/olist-stream \
   --batch-size 5000 --min-category-count 1000
 ```
 
@@ -71,7 +71,7 @@ uv run prak prepare --raw-dir dataset --output-dir data/olist-stream \
 
 ## Схема и все 35 признаков
 
-Порядок и типы фиксирует [schema.py](../src/prak/schema.py). CSV записываются
+Порядок и типы фиксирует [schema.py](../src/buy_today/schema.py). CSV записываются
 в UTF-8 без индекса DataFrame, даты — `YYYY-MM-DD HH:MM:SS` без часового пояса.
 `read_dataset` восстанавливает строковые коды, даты и числа с
 `float_precision="round_trip"`. `order_item_id` — `int64`, даты — `datetime64[ns]`,
@@ -159,8 +159,8 @@ data/olist-stream/
 
 ```python
 from pathlib import Path
-from prak.preparation import prepare_data
-from prak.schema import read_dataset
+from buy_today.preparation import prepare_data
+from buy_today.schema import read_dataset
 
 result = prepare_data(
     Path("dataset"), Path("data/olist-stream"), batch_size=5000,

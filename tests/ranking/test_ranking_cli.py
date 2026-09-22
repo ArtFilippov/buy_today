@@ -5,12 +5,12 @@ import sys
 
 import pytest
 
-from prak.cli import main
+from buy_today.cli import main
 
 
 def run_cli(*args, cwd):
     return subprocess.run(
-        [str(Path(sys.executable).with_name("prak")), *args],
+        [str(Path(sys.executable).with_name("buy_today")), *args],
         cwd=cwd, text=True, capture_output=True, check=False,
     )
 

@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from prak.ranking.data import RankingData, check_ranking_data, read_ranking_data
+from buy_today.ranking.data import RankingData, check_ranking_data, read_ranking_data
 
 
 @pytest.fixture

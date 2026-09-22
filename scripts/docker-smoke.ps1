@@ -3,7 +3,7 @@
 .SYNOPSIS
 Runs synthetic Docker acceptance checks using separate, offline containers.
 .EXAMPLE
-powershell.exe -NoProfile -File .\scripts\docker-smoke.ps1 -Root "C:\Temp\prak acceptance 01"
+powershell.exe -NoProfile -File .\scripts\docker-smoke.ps1 -Root "C:\Temp\buy_today acceptance 01"
 .NOTES
 Build both images before invoking this script. Root must be a NEW absolute
 Windows filesystem directory with an existing parent. Spaces are supported;
@@ -12,8 +12,8 @@ Results are retained on success or failure. No repository datasets are mounted.
 #>
 [CmdletBinding()]
 param(
-    [string]$Image = 'prak:local',
-    [string]$TestImage = 'prak-tests:local',
+    [string]$Image = 'buy_today:local',
+    [string]$TestImage = 'buy_today-tests:local',
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]$Root
@@ -26,7 +26,7 @@ if ($env:OS -ne 'Windows_NT') {
     throw 'Run this script from Windows PowerShell with Docker Desktop using Linux containers.'
 }
 if (($Root -notmatch '^[A-Za-z]:[\\/]') -and ($Root -notmatch '^\\\\[^\\]+\\[^\\]+\\')) {
-    throw 'Root must be an absolute Windows path, for example C:\Temp\prak acceptance 01.'
+    throw 'Root must be an absolute Windows path, for example C:\Temp\buy_today acceptance 01.'
 }
 $Root = [System.IO.Path]::GetFullPath($Root).TrimEnd([char[]]'\/')
 if (Test-Path -LiteralPath $Root) {
@@ -70,7 +70,7 @@ function Invoke-Helper {
 function Invoke-Runtime {
     param([Parameter(Mandatory = $true)][string[]]$CommandArgs)
     $DockerArgs = @('run', '--rm', '--pull', 'never', '--network', 'none',
-        '--volume', "${Workspace}:/workspace", '--volume', "${Raw}:/opt/prak/olist:ro", $Image)
+        '--volume', "${Workspace}:/workspace", '--volume', "${Raw}:/opt/buy_today/olist:ro", $Image)
     Invoke-Docker -DockerArgs ($DockerArgs + $CommandArgs)
 }
 

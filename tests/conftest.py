@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from prak.schema import DATE_COLUMNS, DATE_FORMAT, DTYPES
+from buy_today.schema import DATE_COLUMNS, DATE_FORMAT, DTYPES
 
 
 @pytest.fixture

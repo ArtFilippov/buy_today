@@ -12,7 +12,7 @@ from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
-from prak.ranking import RankingData, SVDRanker
+from buy_today.ranking import RankingData, SVDRanker
 
 
 COUNTS = np.array([

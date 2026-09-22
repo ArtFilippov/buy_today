@@ -7,14 +7,14 @@ import joblib
 import pandas as pd
 import pytest
 
-from prak.auto_eda.checks import check_combination, check_dataset
-from prak.auto_eda.notebook import ReportPaths
-from prak.cli import main
-from prak.generation import generate_dataset, read_history_dataset
-from prak.pipeline import PipelineConfig, read_completed_steps, read_pipeline_config, run_next_batch, run_pipeline
-from prak.ranking import recommend
-from prak.schema import DATE_FORMAT, read_dataset
-from prak.summary import report_summary
+from buy_today.auto_eda.checks import check_combination, check_dataset
+from buy_today.auto_eda.notebook import ReportPaths
+from buy_today.cli import main
+from buy_today.generation import generate_dataset, read_history_dataset
+from buy_today.pipeline import PipelineConfig, read_completed_steps, read_pipeline_config, run_next_batch, run_pipeline
+from buy_today.ranking import recommend
+from buy_today.schema import DATE_FORMAT, read_dataset
+from buy_today.summary import report_summary
 
 
 def read_json(path):
@@ -67,9 +67,9 @@ def fast_reports(monkeypatch):
     def clustering(dataset, batch, output, **kwargs):
         return save(output, {"kind": "clustering"})
 
-    monkeypatch.setattr("prak.update.report_dataset", eda)
-    monkeypatch.setattr("prak.update.report_drift", deda)
-    monkeypatch.setattr("prak.pipeline.report_clustering", clustering)
+    monkeypatch.setattr("buy_today.update.report_dataset", eda)
+    monkeypatch.setattr("buy_today.update.report_drift", deda)
+    monkeypatch.setattr("buy_today.pipeline.report_clustering", clustering)
 
 
 @pytest.mark.parametrize("model", ["random", "svd"])
@@ -151,7 +151,7 @@ def test_stage_exception_is_propagated_without_advancing_progress(
     def fail(*args, **kwargs):
         raise error
 
-    monkeypatch.setattr(f"prak.pipeline.{stage}", fail)
+    monkeypatch.setattr(f"buy_today.pipeline.{stage}", fail)
     with pytest.raises(RuntimeError) as caught:
         run_pipeline(run, all_batches=True)
     assert caught.value is error
@@ -173,7 +173,7 @@ def test_failed_post_update_eda_leaves_reference_but_cannot_append_again(
     def fail(*args, **kwargs):
         raise error
 
-    monkeypatch.setattr("prak.update.report_dataset", fail)
+    monkeypatch.setattr("buy_today.update.report_dataset", fail)
     with pytest.raises(OSError) as caught:
         run_next_batch(run)
     assert caught.value is error
@@ -306,7 +306,7 @@ def test_new_cli_commands_propagate_original_exceptions(monkeypatch, command, fu
     def fail(*args, **kwargs):
         raise error
 
-    monkeypatch.setattr(f"prak.cli.{function}", fail)
+    monkeypatch.setattr(f"buy_today.cli.{function}", fail)
     with pytest.raises(RuntimeError) as caught:
         main([command, *args])
     assert caught.value is error
@@ -317,7 +317,7 @@ def test_new_cli_help(command, capsys):
     with pytest.raises(SystemExit) as caught:
         main([command, "--help"])
     assert caught.value.code == 0
-    assert "prak" in capsys.readouterr().out
+    assert "buy_today" in capsys.readouterr().out
 
 
 def test_cli_rejects_svd_options_for_random(tmp_path):

@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.clustering.distances import TimestampDistance
-from prak.generation import generate_dataset, generate_histories, read_history_dataset
-from prak.schema import ROW_KEY
+from buy_today.clustering.distances import TimestampDistance
+from buy_today.generation import generate_dataset, generate_histories, read_history_dataset
+from buy_today.schema import ROW_KEY
 
 
 class AnchorOnlyDistance:

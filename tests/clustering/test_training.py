@@ -6,11 +6,11 @@ import pandas as pd
 import pytest
 from sklearn.base import BaseEstimator
 
-from prak.clustering.models import ModelSnapshot
-from prak.clustering.models.temporal import train_temporal
-from prak.clustering.report import align_assignments, read_labels
-from prak.clustering.training import train_clustering
-from prak.schema import ROW_KEY
+from buy_today.clustering.models import ModelSnapshot
+from buy_today.clustering.models.temporal import train_temporal
+from buy_today.clustering.report import align_assignments, read_labels
+from buy_today.clustering.training import train_clustering
+from buy_today.schema import ROW_KEY
 
 
 def test_training_roundtrip_and_keyed_alignment(working_frame, write_dataset, tmp_path):

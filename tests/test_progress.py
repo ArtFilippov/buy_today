@@ -7,22 +7,22 @@ from pathlib import Path
 import nbformat
 import pytest
 
-from prak import pipeline
-from prak.auto_eda.checks import check_dataset
-from prak.auto_eda.notebook import ReportPaths, execute_report
-from prak.progress import stage
-from prak.schema import DATE_FORMAT, read_dataset
+from buy_today import pipeline
+from buy_today.auto_eda.checks import check_dataset
+from buy_today.auto_eda.notebook import ReportPaths, execute_report
+from buy_today.progress import stage
+from buy_today.schema import DATE_FORMAT, read_dataset
 
 
 def progress_records(caplog):
-    return [record for record in caplog.records if record.name == "prak.progress"]
+    return [record for record in caplog.records if record.name == "buy_today.progress"]
 
 
 def test_start_is_visible_inside_stage_and_completion_has_elapsed_time(caplog, monkeypatch):
     # Configure only the root: the library's NullHandler must allow propagation.
     caplog.set_level(logging.INFO)
     times = iter([10.0, 12.5])
-    monkeypatch.setattr("prak.progress.perf_counter", lambda: next(times))
+    monkeypatch.setattr("buy_today.progress.perf_counter", lambda: next(times))
     with stage("training", batch_index=3, message="caller context"):
         start, = progress_records(caplog)
         assert start.event == "start"
@@ -44,9 +44,9 @@ def test_start_is_visible_inside_stage_and_completion_has_elapsed_time(caplog, m
 
 @pytest.mark.parametrize("error", [ValueError("bad input"), OSError("write failed"), KeyboardInterrupt()])
 def test_failure_has_duration_traceback_and_preserves_exact_exception(caplog, monkeypatch, error):
-    caplog.set_level(logging.INFO, logger="prak")
+    caplog.set_level(logging.INFO, logger="buy_today")
     times = iter([20.0, 23.0])
-    monkeypatch.setattr("prak.progress.perf_counter", lambda: next(times))
+    monkeypatch.setattr("buy_today.progress.perf_counter", lambda: next(times))
     with pytest.raises(type(error)) as caught:
         with stage("export", output_path="report.html"):
             raise error
@@ -62,14 +62,14 @@ def test_failure_has_duration_traceback_and_preserves_exact_exception(caplog, mo
 
 
 def test_error_logging_failure_cannot_replace_primary_exception(caplog, monkeypatch):
-    caplog.set_level(logging.INFO, logger="prak")
+    caplog.set_level(logging.INFO, logger="buy_today")
 
     class BrokenHandler(logging.Handler):
         def emit(self, record):
             if record.levelno >= logging.ERROR:
                 raise OSError("log disk full")
 
-    monkeypatch.setattr(logging.getLogger("prak.progress"), "handlers", [BrokenHandler()])
+    monkeypatch.setattr(logging.getLogger("buy_today.progress"), "handlers", [BrokenHandler()])
     error = RuntimeError("primary failure")
     with pytest.raises(RuntimeError) as caught:
         with stage("work"):
@@ -79,13 +79,13 @@ def test_error_logging_failure_cannot_replace_primary_exception(caplog, monkeypa
 
 def test_unconfigured_library_does_not_use_last_resort(monkeypatch, capsys):
     root = logging.getLogger()
-    library = logging.getLogger("prak")
+    library = logging.getLogger("buy_today")
     monkeypatch.setattr(root, "handlers", [])
     # Simulate a caller without application handlers, keeping library defaults.
     monkeypatch.setattr(library, "handlers", [
         handler for handler in library.handlers if isinstance(handler, logging.NullHandler)
     ])
-    monkeypatch.setattr(logging.getLogger("prak.progress"), "handlers", [])
+    monkeypatch.setattr(logging.getLogger("buy_today.progress"), "handlers", [])
     error = RuntimeError("must not appear on stderr")
     with pytest.raises(RuntimeError) as caught:
         with stage("unconfigured"):
@@ -123,7 +123,7 @@ def pipeline_case(tmp_path, working_frame, monkeypatch):
     def clustering(dataset, batch, output, **kwargs):
         return save_report(output)
 
-    monkeypatch.setattr("prak.update.report_dataset", eda)
+    monkeypatch.setattr("buy_today.update.report_dataset", eda)
     monkeypatch.setattr(pipeline, "report_clustering", clustering)
     config = pipeline.PipelineConfig(
         model="random", initial_users=6, split_sizes=(4, 2, 2), k=3,
@@ -134,7 +134,7 @@ def pipeline_case(tmp_path, working_frame, monkeypatch):
 
 def test_batch_commit_is_observed_only_after_state_is_saved(pipeline_case, caplog, monkeypatch):
     run, stream, config = pipeline_case
-    caplog.set_level(logging.INFO, logger="prak")
+    caplog.set_level(logging.INFO, logger="buy_today")
     observed = []
 
     class ObserveCommit(logging.Handler):
@@ -143,7 +143,7 @@ def test_batch_commit_is_observed_only_after_state_is_saved(pipeline_case, caplo
                 state = json.loads((run / "state.json").read_text(encoding="utf-8"))
                 observed.append((record.batch_index, state["next_batch_index"]))
 
-    logger = logging.getLogger("prak.pipeline")
+    logger = logging.getLogger("buy_today.pipeline")
     monkeypatch.setattr(logger, "handlers", [*logger.handlers, ObserveCommit()])
     result = pipeline.run_next_batch(run, data_dir=stream, config=config)
     assert observed == [(0, 1)]
@@ -161,7 +161,7 @@ def test_batch_commit_is_observed_only_after_state_is_saved(pipeline_case, caplo
     caplog.clear()
     assert pipeline.run_next_batch(run) is None
     assert observed == [(0, 1)]
-    exhausted, = [record for record in caplog.records if record.name == "prak.pipeline"]
+    exhausted, = [record for record in caplog.records if record.name == "buy_today.pipeline"]
     assert exhausted.event == "stream_exhausted"
     assert exhausted.levelno == logging.INFO
 
@@ -169,7 +169,7 @@ def test_batch_commit_is_observed_only_after_state_is_saved(pipeline_case, caplo
 @pytest.mark.parametrize("failure", ["work", "state_write"])
 def test_failed_batch_never_logs_commit(pipeline_case, caplog, monkeypatch, failure):
     run, stream, config = pipeline_case
-    caplog.set_level(logging.INFO, logger="prak")
+    caplog.set_level(logging.INFO, logger="buy_today")
     error = OSError("injected failure")
     write_json = pipeline._write_json
 
@@ -198,7 +198,7 @@ def test_failed_batch_never_logs_commit(pipeline_case, caplog, monkeypatch, fail
 
 def test_log_io_error_after_commit_propagates_without_rolling_back(pipeline_case, caplog, monkeypatch):
     run, stream, config = pipeline_case
-    caplog.set_level(logging.INFO, logger="prak")
+    caplog.set_level(logging.INFO, logger="buy_today")
     error = OSError("log destination failed after commit")
 
     class FailAfterCommit(logging.Handler):
@@ -206,7 +206,7 @@ def test_log_io_error_after_commit_propagates_without_rolling_back(pipeline_case
             if getattr(record, "event", None) == "batch_committed":
                 raise error
 
-    monkeypatch.setattr(logging.getLogger("prak.pipeline"), "handlers", [FailAfterCommit()])
+    monkeypatch.setattr(logging.getLogger("buy_today.pipeline"), "handlers", [FailAfterCommit()])
     with pytest.raises(OSError) as caught:
         pipeline.run_next_batch(run, data_dir=stream, config=config)
     assert caught.value is error
@@ -218,7 +218,7 @@ def test_log_io_error_after_commit_propagates_without_rolling_back(pipeline_case
 def test_notebook_parent_progress_and_serialization_without_streaming_cells(
     tmp_path, caplog, monkeypatch, fail,
 ):
-    caplog.set_level(logging.INFO, logger="prak")
+    caplog.set_level(logging.INFO, logger="buy_today")
     error = RuntimeError("kernel failed")
     write = nbformat.write
 
@@ -241,9 +241,9 @@ def test_notebook_parent_progress_and_serialization_without_streaming_cells(
         assert (active.stage, active.event) == ("notebook.render", "start")
         return "<p>report</p>", {}
 
-    monkeypatch.setattr("prak.auto_eda.notebook.nbformat.write", serialize)
-    monkeypatch.setattr("prak.auto_eda.notebook.NotebookClient.execute", execute)
-    monkeypatch.setattr("prak.auto_eda.notebook.HTMLExporter.from_notebook_node", render)
+    monkeypatch.setattr("buy_today.auto_eda.notebook.nbformat.write", serialize)
+    monkeypatch.setattr("buy_today.auto_eda.notebook.NotebookClient.execute", execute)
+    monkeypatch.setattr("buy_today.auto_eda.notebook.HTMLExporter.from_notebook_node", render)
     cells = [nbformat.v4.new_code_cell("print('cell output remains in notebook')")]
     if fail:
         with pytest.raises(RuntimeError) as caught:

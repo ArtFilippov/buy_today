@@ -17,15 +17,15 @@ import nbformat
 import pandas as pd
 import pytest
 
-from prak import container_cli
-from prak.auto_eda.checks import check_combination, check_dataset
-from prak.auto_eda.drift import evaluate_drift
-from prak.auto_eda.notebook import ReportPaths, write_metrics
-from prak.generation import read_history_dataset
-from prak.pipeline import read_completed_steps, read_pipeline_config
-from prak.progress import stage
-from prak.schema import read_dataset
-from prak.summary import SummaryPaths
+from buy_today import container_cli
+from buy_today.auto_eda.checks import check_combination, check_dataset
+from buy_today.auto_eda.drift import evaluate_drift
+from buy_today.auto_eda.notebook import ReportPaths, write_metrics
+from buy_today.generation import read_history_dataset
+from buy_today.pipeline import read_completed_steps, read_pipeline_config
+from buy_today.progress import stage
+from buy_today.schema import read_dataset
+from buy_today.summary import SummaryPaths
 
 from container_support import (
     INIT_ARGS, KEEP_FILES, RESET_FILES, SMALL_PARAMETERS, SUMMARY_FILES,
@@ -93,9 +93,9 @@ def compact_reports(monkeypatch):
             model={"class": "TemporalClusterer"}, distance={"class": "TimestampDistance"},
         )
 
-    monkeypatch.setattr("prak.update.report_dataset", eda)
-    monkeypatch.setattr("prak.update.report_drift", deda)
-    monkeypatch.setattr("prak.pipeline.report_clustering", clustering)
+    monkeypatch.setattr("buy_today.update.report_dataset", eda)
+    monkeypatch.setattr("buy_today.update.report_drift", deda)
+    monkeypatch.setattr("buy_today.pipeline.report_clustering", clustering)
 
 
 @pytest.fixture
@@ -392,8 +392,8 @@ def test_exhausted_update_rebuilds_summary_without_changing_training_state(initi
     before = file_hashes(workspace / "run")
     for relative in SUMMARY_FILES:
         (workspace / relative).unlink()
-    monkeypatch.setattr("prak.pipeline.train_ranker", forbidden)
-    monkeypatch.setattr("prak.pipeline.generate_dataset", forbidden)
+    monkeypatch.setattr("buy_today.pipeline.train_ranker", forbidden)
+    monkeypatch.setattr("buy_today.pipeline.generate_dataset", forbidden)
     monkeypatch.setattr(container_cli, "prepare_data", forbidden)
     old_logs = set((workspace / "logs").iterdir())
     capsys.readouterr()
@@ -449,7 +449,7 @@ def test_handlers_levels_and_propagation_restored_after_success_failure_and_repe
     container_environment, monkeypatch,
 ):
     workspace, _ = container_environment
-    logger = logging.getLogger("prak")
+    logger = logging.getLogger("buy_today")
     old_handler = logging.NullHandler()
     monkeypatch.setattr(logger, "handlers", [old_handler])
     monkeypatch.setattr(logger, "level", logging.DEBUG)
@@ -502,9 +502,9 @@ def test_update_requires_initialized_run_without_exporting_or_preparing(containe
 
 
 def test_logging_restores_effective_child_level_after_command(container_environment, monkeypatch):
-    logger = logging.getLogger("prak")
+    logger = logging.getLogger("buy_today")
     previous = logger.level
-    child = logging.getLogger("prak.progress")
+    child = logging.getLogger("buy_today.progress")
     error = RuntimeError("stop before training")
 
     def fail(run):

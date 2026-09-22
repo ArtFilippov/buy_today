@@ -81,10 +81,10 @@ TVD учитывает все значения обоих входов, вклю
 
 ### API отчётов
 
-- `prak.auto_eda.report_dataset(dataset_path, output_dir) -> ReportPaths`.
-- `prak.auto_eda.report_drift(batch_path, reference_path, output_dir, *, thresholds=DriftThresholds()) -> ReportPaths`.
-- `prak.update.initialize_reference(batch_path, reference_path, output_dir) -> ReportPaths`.
-- `prak.update.update_reference(batch_path, reference_path, output_dir, *, thresholds=DriftThresholds()) -> UpdateReports`.
+- `buy_today.auto_eda.report_dataset(dataset_path, output_dir) -> ReportPaths`.
+- `buy_today.auto_eda.report_drift(batch_path, reference_path, output_dir, *, thresholds=DriftThresholds()) -> ReportPaths`.
+- `buy_today.update.initialize_reference(batch_path, reference_path, output_dir) -> ReportPaths`.
+- `buy_today.update.update_reference(batch_path, reference_path, output_dir, *, thresholds=DriftThresholds()) -> UpdateReports`.
 
 `ReportPaths` содержит абсолютные `notebook_path`, `html_path`, `metrics_path`;
 `UpdateReports` — `deda` и `eda`. `DriftThresholds` имеет поля `price`, `category`,
@@ -129,13 +129,13 @@ notebook, HTML и `metrics.json` (`kind="clustering"`) в каталог мод�
 
 ### API кластеризации
 
-- `train_temporal` из `prak.clustering.models.temporal` задаёт политику полного переобучения.
-- `prak.clustering.training.train_clustering(batch_path, output_dir, *, strategy=train_temporal)`
+- `train_temporal` из `buy_today.clustering.models.temporal` задаёт политику полного переобучения.
+- `buy_today.clustering.training.train_clustering(batch_path, output_dir, *, strategy=train_temporal)`
   вызывает стратегию с DataFrame и сохраняет `ModelSnapshot(model, distance, labels)`.
   Возвращает `TrainingPaths(model_path, distance_path, labels_path)`.
-- `prak.clustering.report.report_clustering(dataset_path, new_batch_path, model_dir, *, max_evaluation_rows=1000, random_state=42)`
+- `buy_today.clustering.report.report_clustering(dataset_path, new_batch_path, model_dir, *, max_evaluation_rows=1000, random_state=42)`
   возвращает `ReportPaths`.
-- `prak.clustering.evaluation.evaluate_clustering(X, labels, *, distance, new_rows, max_evaluation_rows=1000, random_state=42)`
+- `buy_today.clustering.evaluation.evaluate_clustering(X, labels, *, distance, new_rows, max_evaluation_rows=1000, random_state=42)`
   не зависит от Olist: X — непустой двумерный DataFrame/ndarray, labels — целые,
   new_rows — булева маска последнего батча, оба массива длины `len(X)`.
   `EvaluationResult` содержит силуэт/причину, позиции выборки, её метки, маску
@@ -186,7 +186,7 @@ notebook, HTML и `metrics.json` (`kind="clustering"`) в каталог мод�
 
 ### API генератора
 
-Из `prak.generation`:
+Из `buy_today.generation`:
 
 - `generate_histories(batch, *, distance, batch_index, n_users, temperature, split_sizes=(70, 15, 15), random_state=42)`
   работает в памяти и возвращает `GeneratedHistories(events, anchors)`.
@@ -253,7 +253,7 @@ Validation предназначен для выбора настроек, test �
 
 ### API ранжирования и inference
 
-Из `prak.ranking`:
+Из `buy_today.ranking`:
 
 - `train_ranker(dataset_dir, output_dir, *, ranker=None)` клонирует ранжировщик
   (по умолчанию Random), обучает и возвращает `TrainingPaths(model_path, manifest_path)`.
@@ -301,7 +301,7 @@ HTML относятся к своим шагам. Для повторного и
 нужен соответствующий накопленный CSV: текущий эталон может содержать более поздние
 батчи. Повтор всего эксперимента выполняется в новом каталоге.
 
-Из `prak.pipeline`: `PipelineConfig`, `run_next_batch(run_dir, data_dir=..., config=...)`
+Из `buy_today.pipeline`: `PipelineConfig`, `run_next_batch(run_dir, data_dir=..., config=...)`
 возвращает `StepResult(step_index, output_dir, manifest_path)` или `None` при
 исчерпании; `run_pipeline(..., all_batches=True)` — кортеж выполненных шагов.
 `read_pipeline_config` читает настройки, `read_completed_steps` проверяет и
@@ -322,5 +322,5 @@ HTML относятся к своим шагам. Для повторного и
 Повторный вызов обновляет три файла. HTML самодостаточен, подробные отчёты
 доступны по ссылкам внутри прогона.
 
-`prak.summary.report_summary(run_dir)` возвращает
+`buy_today.summary.report_summary(run_dir)` возвращает
 `SummaryPaths(json_path, csv_path, html_path)`.

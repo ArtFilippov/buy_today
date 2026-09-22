@@ -10,8 +10,8 @@ from urllib.parse import unquote
 
 import pytest
 
-from prak.pipeline import PipelineConfig, read_completed_steps
-from prak.summary import SummaryPaths, report_summary
+from buy_today.pipeline import PipelineConfig, read_completed_steps
+from buy_today.summary import SummaryPaths, report_summary
 
 
 def digest(value):
@@ -72,7 +72,7 @@ def completed_run(tmp_path, *, model="random", count=2):
             "n_users": users, "user_ids_sha256": digest(json.dumps([f"u{i}" for i in range(users)]).encode()),
             "versions": {"numpy": "2.1.0", "scikit_learn": "1.6.0"},
             "model": {"file": "model.joblib", "sha256": digest(f"model:{index}".encode()),
-                      "class": f"prak.ranking.{model}.{'RandomRanker' if model == 'random' else 'SVDRanker'}",
+                      "class": f"buy_today.ranking.{model}.{'RandomRanker' if model == 'random' else 'SVDRanker'}",
                       "parameters": {"random_state": 42}},
         }
         if model == "svd":

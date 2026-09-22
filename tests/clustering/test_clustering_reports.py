@@ -16,12 +16,12 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.metrics import silhouette_score
 
-from prak.clustering.distances import TimestampDistance
-from prak.clustering.evaluation import evaluate_clustering
-from prak.clustering.models.temporal import train_temporal
-from prak.clustering.plots import plot_tsne, project_tsne
-from prak.clustering.report import report_clustering
-from prak.clustering.training import train_clustering
+from buy_today.clustering.distances import TimestampDistance
+from buy_today.clustering.evaluation import evaluate_clustering
+from buy_today.clustering.models.temporal import train_temporal
+from buy_today.clustering.plots import plot_tsne, project_tsne
+from buy_today.clustering.report import report_clustering
+from buy_today.clustering.training import train_clustering
 
 
 class Assets(HTMLParser):
@@ -61,8 +61,8 @@ def test_silhouette_and_tsne_share_sample_and_distances(working_frame, monkeypat
             matrix[:] = 123
             return np.arange(len(matrix) * 2).reshape(-1, 2)
 
-    monkeypatch.setattr("prak.clustering.evaluation.silhouette_score", score)
-    monkeypatch.setattr("prak.clustering.plots.TSNE", ProjectionSpy)
+    monkeypatch.setattr("buy_today.clustering.evaluation.silhouette_score", score)
+    monkeypatch.setattr("buy_today.clustering.plots.TSNE", ProjectionSpy)
     result = evaluate_clustering(
         working_frame, np.arange(12) // 4, distance=TimestampDistance(),
         new_rows=np.arange(12) >= 6, max_evaluation_rows=8,

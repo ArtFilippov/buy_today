@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.auto_eda.checks import check_combination, check_dataset
-from prak.schema import read_dataset
+from buy_today.auto_eda.checks import check_combination, check_dataset
+from buy_today.schema import read_dataset
 
 
 def test_complete_dataset_passes_with_repeated_products_and_tied_times(working_frame):

@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.clustering.distances import TimestampDistance
-from prak.generation import generate_dataset
-from prak.ranking import RandomRanker, SVDRanker, read_ranking_data, report_ranking, train_ranker
+from buy_today.clustering.distances import TimestampDistance
+from buy_today.generation import generate_dataset
+from buy_today.ranking import RandomRanker, SVDRanker, read_ranking_data, report_ranking, train_ranker
 
 
 def contents(directory):
@@ -150,7 +150,7 @@ def test_write_failure_never_publishes_partial_artifacts(ranking_snapshot, tmp_p
     def failed_write(*args, **kwargs):
         raise OSError("write failed")
 
-    monkeypatch.setattr("prak.ranking.storage._write_json", failed_write)
+    monkeypatch.setattr("buy_today.ranking.storage._write_json", failed_write)
     with pytest.raises(OSError, match="write failed"):
         if operation == "train":
             train_ranker(ranking_snapshot, output)

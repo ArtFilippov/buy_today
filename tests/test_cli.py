@@ -9,16 +9,16 @@ import nbformat
 import pandas as pd
 import pytest
 
-from prak.auto_eda import DriftThresholds
-from prak.auto_eda.notebook import ReportPaths
-from prak.cli import main
-from prak.schema import SORT_KEY, read_dataset
-from prak.update import UpdateReports
+from buy_today.auto_eda import DriftThresholds
+from buy_today.auto_eda.notebook import ReportPaths
+from buy_today.cli import main
+from buy_today.schema import SORT_KEY, read_dataset
+from buy_today.update import UpdateReports
 
 
 def run_cli(*args: str, cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [str(Path(sys.executable).with_name("prak")), *args],
+        [str(Path(sys.executable).with_name("buy_today")), *args],
         cwd=cwd, text=True, capture_output=True, check=False,
     )
 
@@ -95,7 +95,7 @@ def test_prepare_no_categories_is_failure(raw_tables, write_raw, tmp_path):
 def test_help(tmp_path, args):
     result = run_cli(*args, cwd=tmp_path)
     assert result.returncode == 0
-    assert "prak" in result.stdout
+    assert "buy_today" in result.stdout
     if args[0] == "prepare":
         assert "--min-category-count" in result.stdout
     if args[0] == "cluster":
@@ -141,7 +141,7 @@ def test_report_commands_from_another_cwd(working_frame, write_dataset, tmp_path
     assert str(report_dir / "report.html") in result.stdout
     assert dataset.read_bytes() == before
     if command == "init":
-        from prak.schema import read_dataset
+        from buy_today.schema import read_dataset
         import pandas as pd
         pd.testing.assert_frame_equal(
             read_dataset(tmp_path / "saved reference/reference.csv"), working_frame,
@@ -318,7 +318,7 @@ def test_drift_commands_forward_default_and_boundary_thresholds(
         return report if command == "deda" else UpdateReports(deda=report, eda=report)
 
     target = "report_drift" if command == "deda" else "update_reference"
-    monkeypatch.setattr(f"prak.cli.{target}", run_report)
+    monkeypatch.setattr(f"buy_today.cli.{target}", run_report)
     args = [command, "--batch", "batch.csv", "--reference", "ref.csv", "--output-dir", "reports"]
     if value is not None:
         for feature in ("price", "category", "state"):
@@ -338,7 +338,7 @@ def test_drift_commands_report_technical_errors_as_exit_one(
         raise failure
 
     target = "report_drift" if command == "deda" else "update_reference"
-    monkeypatch.setattr(f"prak.cli.{target}", fail_report)
+    monkeypatch.setattr(f"buy_today.cli.{target}", fail_report)
     with pytest.raises(SystemExit) as error:
         main([command, "--batch", "batch.csv", "--reference", "ref.csv", "--output-dir", "reports"])
     assert error.value.code == 1
@@ -426,7 +426,7 @@ def test_cluster_too_many_clusters_is_data_error(working_frame, write_dataset, t
 
 @pytest.mark.parametrize("override", [None, 3])
 def test_cluster_leaves_default_to_temporal(monkeypatch, tmp_path, override):
-    from prak.clustering.training import TrainingPaths
+    from buy_today.clustering.training import TrainingPaths
 
     calls = []
 
@@ -437,8 +437,8 @@ def test_cluster_leaves_default_to_temporal(monkeypatch, tmp_path, override):
         strategy(object())
         return TrainingPaths(*(tmp_path / name for name in ("model", "distance", "labels")))
 
-    monkeypatch.setattr("prak.cli.train_temporal", strategy)
-    monkeypatch.setattr("prak.cli.train_clustering", train)
+    monkeypatch.setattr("buy_today.cli.train_temporal", strategy)
+    monkeypatch.setattr("buy_today.cli.train_clustering", train)
     args = ["cluster", "--batch", "batch.csv", "--output-dir", "model"]
     if override is not None:
         args.extend(["--temporal-n-clusters", str(override)])

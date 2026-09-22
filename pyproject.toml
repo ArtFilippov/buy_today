@@ -1,5 +1,5 @@
 [project]
-name = "prak"
+name = "buy_today"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.scripts]
-prak = "prak.cli:main"
+buy_today = "buy_today.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8.3"]

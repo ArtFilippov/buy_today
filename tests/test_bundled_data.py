@@ -10,7 +10,7 @@ from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
 
 import pytest
 
-from prak import bundled_data
+from buy_today import bundled_data
 
 
 RAW_FILES = (
@@ -267,7 +267,7 @@ def test_existing_bundle_is_not_overwritten(tmp_path, monkeypatch):
 
 def test_build_entrypoint_accepts_destination(tmp_path, serve_zip):
     response, _ = serve_zip(make_zip())
-    destination = tmp_path / "image" / "opt" / "prak" / "olist"
+    destination = tmp_path / "image" / "opt" / "buy_today" / "olist"
 
     bundled_data.main([str(destination)])
 

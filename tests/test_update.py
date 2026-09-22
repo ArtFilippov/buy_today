@@ -3,10 +3,10 @@ from nbclient.exceptions import CellExecutionError
 import pandas as pd
 import pytest
 
-from prak.auto_eda import DriftThresholds
-from prak.auto_eda.notebook import ReportPaths
-from prak.schema import DATE_FORMAT, ROW_KEY, SORT_KEY, read_dataset
-from prak.update import UpdateReports, initialize_reference, update_reference
+from buy_today.auto_eda import DriftThresholds
+from buy_today.auto_eda.notebook import ReportPaths
+from buy_today.schema import DATE_FORMAT, ROW_KEY, SORT_KEY, read_dataset
+from buy_today.update import UpdateReports, initialize_reference, update_reference
 
 
 @pytest.mark.parametrize("existing", [False, True])
@@ -31,7 +31,7 @@ def test_init_saves_exact_reference_before_reporting(
         pd.testing.assert_frame_equal(read_dataset(dataset_path), expected)
         return result
 
-    monkeypatch.setattr("prak.update.report_dataset", report_saved)
+    monkeypatch.setattr("buy_today.update.report_dataset", report_saved)
     assert initialize_reference(str(batch), str(reference), str(reports)) == result
     assert calls == [(reference, reports / "eda")]
     assert batch.read_bytes() == batch_before
@@ -55,7 +55,7 @@ def test_failed_eda_keeps_newly_written_reference(working_frame, write_dataset, 
     def fail_report(*args):
         raise RuntimeError("EDA failed")
 
-    monkeypatch.setattr("prak.update.report_dataset", fail_report)
+    monkeypatch.setattr("buy_today.update.report_dataset", fail_report)
     with pytest.raises(RuntimeError, match="EDA failed"):
         initialize_reference(write_dataset(working_frame), reference, tmp_path / "reports")
     pd.testing.assert_frame_equal(read_dataset(reference), working_frame)
@@ -101,9 +101,9 @@ def test_update_reports_before_and_after_exact_sorted_merge(
         calls.append("eda")
         return eda
 
-    monkeypatch.setattr("prak.update.report_drift", report_before)
-    monkeypatch.setattr("prak.update.read_dataset", read_after_deda)
-    monkeypatch.setattr("prak.update.report_dataset", report_after)
+    monkeypatch.setattr("buy_today.update.report_drift", report_before)
+    monkeypatch.setattr("buy_today.update.read_dataset", read_after_deda)
+    monkeypatch.setattr("buy_today.update.report_dataset", report_after)
     result = update_reference(str(batch), str(reference), str(reports), thresholds=thresholds)
     assert isinstance(result, UpdateReports)
     assert (result.deda, result.eda) == (deda, eda)
@@ -120,9 +120,9 @@ def test_update_missing_reference_fails_before_deda(tmp_path, monkeypatch):
     def unexpected_call(*args, **kwargs):
         pytest.fail("Missing reference must fail before reports or CSV reads")
 
-    monkeypatch.setattr("prak.update.report_drift", unexpected_call)
-    monkeypatch.setattr("prak.update.report_dataset", unexpected_call)
-    monkeypatch.setattr("prak.update.read_dataset", unexpected_call)
+    monkeypatch.setattr("buy_today.update.report_drift", unexpected_call)
+    monkeypatch.setattr("buy_today.update.report_dataset", unexpected_call)
+    monkeypatch.setattr("buy_today.update.read_dataset", unexpected_call)
     with pytest.raises(FileNotFoundError, match="reference.csv"):
         update_reference(tmp_path / "also absent.csv", reference, tmp_path / "step")
     assert not reference.parent.exists()
@@ -142,9 +142,9 @@ def test_update_deda_technical_failure_preserves_reference(
     def unexpected_call(*args, **kwargs):
         pytest.fail("Failed DEDA must stop before CSV reads or EDA")
 
-    monkeypatch.setattr("prak.update.report_drift", fail_deda)
-    monkeypatch.setattr("prak.update.read_dataset", unexpected_call)
-    monkeypatch.setattr("prak.update.report_dataset", unexpected_call)
+    monkeypatch.setattr("buy_today.update.report_drift", fail_deda)
+    monkeypatch.setattr("buy_today.update.read_dataset", unexpected_call)
+    monkeypatch.setattr("buy_today.update.report_dataset", unexpected_call)
     with pytest.raises(RuntimeError, match="DEDA kernel failed"):
         update_reference(batch, reference, tmp_path / "step")
     assert reference.read_bytes() == before
@@ -169,8 +169,8 @@ def test_update_html_export_failure_preserves_reference(
     def unexpected_eda(*args, **kwargs):
         pytest.fail("HTML export must complete before writing the reference or EDA")
 
-    monkeypatch.setattr("prak.auto_eda.notebook.HTMLExporter.from_notebook_node", fail_export)
-    monkeypatch.setattr("prak.update.report_dataset", unexpected_eda)
+    monkeypatch.setattr("buy_today.auto_eda.notebook.HTMLExporter.from_notebook_node", fail_export)
+    monkeypatch.setattr("buy_today.update.report_dataset", unexpected_eda)
     with pytest.raises(OSError, match="HTML export failed"):
         update_reference(batch, reference, reports)
     assert len(exported) == 1
@@ -196,8 +196,8 @@ def test_update_failed_final_eda_keeps_merged_reference(
         pd.testing.assert_frame_equal(read_dataset(dataset_path), expected, check_exact=True)
         raise RuntimeError("Final EDA failed")
 
-    monkeypatch.setattr("prak.update.report_drift", successful_deda)
-    monkeypatch.setattr("prak.update.report_dataset", fail_eda)
+    monkeypatch.setattr("buy_today.update.report_drift", successful_deda)
+    monkeypatch.setattr("buy_today.update.report_dataset", fail_eda)
     with pytest.raises(RuntimeError, match="Final EDA failed"):
         update_reference(batch, reference, reports)
     pd.testing.assert_frame_equal(read_dataset(reference), expected, check_exact=True)
@@ -228,7 +228,7 @@ def test_update_real_deda_rejects_invalid_inputs_before_writing(
     def unexpected_eda(*args, **kwargs):
         pytest.fail("Rejected inputs must not reach EDA")
 
-    monkeypatch.setattr("prak.update.report_dataset", unexpected_eda)
+    monkeypatch.setattr("buy_today.update.report_dataset", unexpected_eda)
     with pytest.raises(CellExecutionError, match=message):
         update_reference(batch, reference, reports)
     assert reference.read_bytes() == reference_before

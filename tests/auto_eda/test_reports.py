@@ -12,11 +12,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.auto_eda import report_dataset, report_drift
-from prak.auto_eda.checks import check_dataset
-from prak.auto_eda.drift import DriftThresholds
-from prak.auto_eda.notebook import ReportPaths, execute_report, write_metrics
-from prak.auto_eda.plots import (
+from buy_today.auto_eda import report_dataset, report_drift
+from buy_today.auto_eda.checks import check_dataset
+from buy_today.auto_eda.drift import DriftThresholds
+from buy_today.auto_eda.notebook import ReportPaths, execute_report, write_metrics
+from buy_today.auto_eda.plots import (
     category_shares, comparison_category_shares, plot_categories_comparison,
     plot_price, plot_price_comparison, plot_states, plot_states_comparison,
 )

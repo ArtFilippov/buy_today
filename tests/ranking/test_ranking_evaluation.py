@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from prak.ranking.data import RankingData
-from prak.ranking.evaluation import RankingEvaluation, evaluate_ranker
-from prak.ranking.random import RandomRanker
+from buy_today.ranking.data import RankingData
+from buy_today.ranking.evaluation import RankingEvaluation, evaluate_ranker
+from buy_today.ranking.random import RandomRanker
 
 
 class PredictOnlyRanker:

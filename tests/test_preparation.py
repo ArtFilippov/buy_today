@@ -3,8 +3,8 @@ import json
 import pandas as pd
 import pytest
 
-from prak.preparation import prepare_data
-from prak.schema import COLUMNS, DATE_COLUMNS, DTYPES, read_dataset
+from buy_today.preparation import prepare_data
+from buy_today.schema import COLUMNS, DATE_COLUMNS, DTYPES, read_dataset
 
 
 def test_complete_dataset_and_geography(raw_tables, write_raw, tmp_path):

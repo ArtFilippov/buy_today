@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from sklearn.metrics import silhouette_score
 
-from prak.clustering.evaluation import evaluate_clustering
+from buy_today.clustering.evaluation import evaluate_clustering
 
 
 class DistanceOnly:

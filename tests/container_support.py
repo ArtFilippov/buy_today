@@ -15,9 +15,9 @@ import joblib
 import nbformat
 import pandas as pd
 
-from prak.bundled_data import OLIST_FILES
-from prak.generation import read_history_dataset
-from prak.pipeline import read_completed_steps
+from buy_today.bundled_data import OLIST_FILES
+from buy_today.generation import read_history_dataset
+from buy_today.pipeline import read_completed_steps
 
 
 CATEGORY_COUNTS = {name: 4 for name in ("toys", "books", "games", "garden", "sports", "music")}
@@ -152,7 +152,7 @@ def check_reports(workspace, count):
             assert cells and all(cell.execution_count is not None for cell in cells)
             assert not any(output.output_type == "error" for cell in cells for output in cell.outputs)
         training = read_json(step / "ranking/manifest.json")
-        assert training["model"]["class"] == "prak.ranking.svd.SVDRanker"
+        assert training["model"]["class"] == "buy_today.ranking.svd.SVDRanker"
         model = step / "ranking/model.joblib"
         assert hashlib.sha256(model.read_bytes()).hexdigest() == training["model"]["sha256"]
         read_history_dataset(step / "histories")
