@@ -22,7 +22,7 @@ OPENING = """- **Вопрос.** Подходит ли собранный Olist 
 - **Порядок.** Все 13 исследовательских графиков сохранены в порядке исследования, включая проверки чувствительности и результаты без существенных изменений.
 """
 
-INPUTS = """- **Входы.** `../../dataset/olist_prepared_dataset.csv` и `../../datasets/olist-eda/source_reference.csv.gz`; SHA-256 проверяется по `input_manifest.json`. [Происхождение и команды](../../datasets/olist-eda/dataset_evidence.md), [контекст](../../visualizations/olist-eda/data_context.md), [описание полей](../../feature_selection.md).
+INPUTS = """- **Входы.** `../../dataset/olist_prepared_dataset.csv` и `../../datasets/olist-eda/source_reference.csv.gz`; SHA-256 проверяется по `input_manifest.json`. [Происхождение и команды](../../datasets/olist-eda/dataset_evidence.md), [контекст](../../visualizations/olist-eda/data_context.md), [описание полей](../../docs/data.md#схема-и-все-35-признаков).
 - **Reference.** По всем исходным позициям присоединены заказ, пользователь и категория; сохранены число продавцов товара и признак отбора. В notebook читается готовый результат. При его отсутствии выполнить **из корня репозитория**: `.venv/bin/python datasets/olist-eda/collect_reference.py`.
 - **Правила.** Пропуски не импутируются; заказные метрики дедуплицируются по `order_id`, товарные — по `product_id`. Почтовые префиксы читаются строками. Выборок и случайных seed нет: используется полный доступный набор.
 - **Параметры.** Ниже доступны `TOP_N`, `CUT_DATES`, `HOLDOUT_DAYS`. Запускать сверху вниз в окружении проекта (`uv sync --frozen`); сборка данных внутри notebook не вызывается.
