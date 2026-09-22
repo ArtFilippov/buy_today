@@ -1,6 +1,7 @@
 """Key alignment and executable reports for already saved clustering snapshots."""
 
 from pathlib import Path
+import json
 from textwrap import dedent
 
 import nbformat
@@ -11,6 +12,26 @@ from prak.auto_eda.notebook import ReportPaths, execute_report
 from prak.clustering.evaluation import validate_evaluation_parameters
 from prak.clustering.training import check_labels
 from prak.schema import CSV_DTYPES, ROW_KEY
+
+
+def parameter_metadata(estimator) -> dict:
+    """Keep ordinary parameters typed and render non-JSON parameter objects.
+
+    These are descriptive metadata, not an estimator serialization format;
+    executable state remains in joblib. Numeric evaluation results stay strict.
+    """
+    def describe(value):
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        if isinstance(value, np.random.RandomState):
+            return {"class": "RandomState", "state": value.get_state()}
+        if hasattr(value, "get_params"):
+            return {"class": type(value).__name__, "parameters": value.get_params(deep=False)}
+        return repr(value)
+
+    return json.loads(json.dumps(estimator.get_params(deep=True), default=describe), parse_constant=str)
 
 
 def read_labels(path: Path | str) -> pd.DataFrame:
@@ -51,6 +72,7 @@ def report_clustering(
     *,
     max_evaluation_rows=1000,
     random_state=42,
+    thread_limit: int | None = None,
 ) -> ReportPaths:
     """Execute loading, validation, sampling, silhouette and t-SNE in a notebook."""
     validate_evaluation_parameters(max_evaluation_rows, random_state)
@@ -81,7 +103,8 @@ def report_clustering(
             from prak.schema import read_dataset
             from prak.auto_eda.checks import check_dataset
             from prak.auto_eda.eda import dataset_summary
-            from prak.clustering.report import read_labels, align_assignments
+            from prak.auto_eda.notebook import write_metrics
+            from prak.clustering.report import read_labels, align_assignments, parameter_metadata
             from prak.clustering.evaluation import evaluate_clustering
             from prak.clustering.plots import project_tsne, plot_tsne
 
@@ -97,10 +120,15 @@ def report_clustering(
             assignments = read_labels(model_dir / 'labels.csv')
             distance = joblib.load(model_dir / 'distance.joblib')
             model = joblib.load(model_dir / 'model.joblib')
-            for role, path in [('Датасет', dataset_path), ('Последний батч', new_batch_path),
-                               ('Метки', model_dir / 'labels.csv')]:
+            inputs = {{}}
+            for key, role, path in [
+                ('dataset', 'Датасет', dataset_path),
+                ('new_batch', 'Последний батч', new_batch_path),
+                ('labels', 'Метки', model_dir / 'labels.csv'),
+            ]:
                 with path.open('rb') as source:
                     digest = hashlib.file_digest(source, 'sha256').hexdigest()
+                inputs[key] = {{'path': str(path), 'sha256': digest}}
                 print(f'{{role}}: {{path}}')
                 print(f'SHA-256: {{digest}}')
             print(f'Модель: {{model_dir / "model.joblib"}}')
@@ -114,8 +142,10 @@ def report_clustering(
         code("show_table(dataset_summary(frame))\nprint(f'Последний батч: {len(new_batch):,} позиций.')"),
         markdown("## Параметры модели и расстояния\nМодель загружается только для показа параметров."),
         code("""
-            print(f'Модель: {type(model).__name__}; параметры: {model.get_params(deep=True)}')
-            print(f'Расстояние: {type(distance).__name__}; параметры: {distance.get_params(deep=True)}')
+            model_info = {'class': type(model).__name__, 'parameters': parameter_metadata(model)}
+            distance_info = {'class': type(distance).__name__, 'parameters': parameter_metadata(distance)}
+            print(f"Модель: {model_info['class']}; параметры: {model_info['parameters']}")
+            print(f"Расстояние: {distance_info['class']}; параметры: {distance_info['parameters']}")
         """),
         markdown("""## Обязательные проверки
 Строгая схема и типы, непустые CSV, пропуски, уникальность ключей,
@@ -177,5 +207,21 @@ def report_clustering(
 Доли новых и прежних позиций в ней могут отличаться от долей во всём датасете.
 Состояние модели, расстояния и файл меток при оценке не изменяются.
 """),
+        code("""
+            write_metrics({
+                'format_version': 1,
+                'kind': 'clustering',
+                'inputs': inputs,
+                'silhouette': result.silhouette,
+                'silhouette_reason': result.silhouette_reason,
+                'sample_rows': len(result.sample_positions),
+                'new_count': result.new_count,
+                'previous_count': result.previous_count,
+                'max_evaluation_rows': max_evaluation_rows,
+                'random_state': random_state,
+                'model': model_info,
+                'distance': distance_info,
+            })
+        """),
     ]
-    return execute_report(cells, model_dir, title="Оценка кластеризации Olist")
+    return execute_report(cells, model_dir, title="Оценка кластеризации Olist", thread_limit=thread_limit)

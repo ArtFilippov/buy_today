@@ -75,6 +75,7 @@ def report_drift(
             from prak.auto_eda.drift import DriftThresholds, evaluate_drift
             from prak.auto_eda.eda import dataset_summary
             from prak.auto_eda.deda import drift_checks, drift_conclusion
+            from prak.auto_eda.notebook import write_metrics
             from prak.auto_eda.plots import (
                 plot_price_comparison, plot_categories_comparison, plot_states_comparison,
             )
@@ -91,9 +92,14 @@ def report_drift(
                 price={float(thresholds.price)!r}, category={float(thresholds.category)!r},
                 state={float(thresholds.state)!r},
             )
-            for role, path in [('Эталон', reference_path), ('Батч', batch_path)]:
+            inputs = {{}}
+            for key, role, path, frame in [
+                ('reference', 'Эталон', reference_path, reference),
+                ('batch', 'Батч', batch_path, batch),
+            ]:
                 with path.open('rb') as source:
                     digest = hashlib.file_digest(source, 'sha256').hexdigest()
+                inputs[key] = {{'path': str(path), 'sha256': digest, 'rows': len(frame)}}
                 print(f'{{role}} CSV: {{path}}')
                 print(f'SHA-256: {{digest}}')
             print(f'Python: {{sys.executable}}')
@@ -155,5 +161,22 @@ Top-10 по текущему эталону, равные частоты раз�
         code("figure = plot_states_comparison(reference, batch)\nplt.show()\nplt.close(figure)"),
         markdown("## Итог"),
         code("print(drift_conclusion(reference, batch, drift))"),
+        code("""
+            write_metrics({
+                'format_version': 1,
+                'kind': 'deda',
+                'inputs': inputs,
+                'drift_detected': drift.drift_detected,
+                'metrics': drift.metrics.rename(columns={
+                    'Признак': 'feature', 'Мера': 'measure', 'Значение': 'value',
+                    'Порог': 'threshold', 'Дрейф': 'drift',
+                }).to_dict('records'),
+                'thresholds': {
+                    'price': thresholds.price,
+                    'category': thresholds.category,
+                    'state': thresholds.state,
+                },
+            })
+        """),
     ]
     return execute_report(cells, output_dir, title="DEDA · эталон и новый батч Olist")

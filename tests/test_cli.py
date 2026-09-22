@@ -270,7 +270,7 @@ def test_drift_commands_from_another_cwd_with_real_drift(
         assert not (tmp_path / "state.json").exists()
         assert not (tmp_path / "manifest.json").exists()
     for directory in report_dirs:
-        assert {path.name for path in directory.iterdir()} == {"report.ipynb", "report.html"}
+        assert {path.name for path in directory.iterdir()} == {"report.ipynb", "report.html", "metrics.json"}
         for name in ("report.ipynb", "report.html"):
             assert str(directory / name) in result.stdout
         assert "Итог" in (directory / "report.html").read_text(encoding="utf-8")

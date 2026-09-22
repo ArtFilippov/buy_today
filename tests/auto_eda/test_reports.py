@@ -1,5 +1,6 @@
 import hashlib
 from html.parser import HTMLParser
+import json
 import sys
 
 import matplotlib
@@ -12,7 +13,9 @@ import pandas as pd
 import pytest
 
 from prak.auto_eda import report_dataset, report_drift
-from prak.auto_eda.notebook import execute_report
+from prak.auto_eda.checks import check_dataset
+from prak.auto_eda.drift import DriftThresholds
+from prak.auto_eda.notebook import ReportPaths, execute_report, write_metrics
 from prak.auto_eda.plots import (
     category_shares, comparison_category_shares, plot_categories_comparison,
     plot_price, plot_price_comparison, plot_states, plot_states_comparison,
@@ -54,6 +57,32 @@ def test_eda_executes_in_project_python_and_exports_standalone_html(
     assert "Дрейф по одному датасету не оценивается" in text
     assert "check_dataset(frame)" in "\n".join(cell.source for cell in code)
 
+    assert paths.metrics_path == paths.notebook_path.with_name("metrics.json")
+    assert ReportPaths(paths.notebook_path, paths.html_path).metrics_path == paths.metrics_path
+    metrics_text = paths.metrics_path.read_text(encoding="utf-8")
+    metrics = json.loads(metrics_text)
+    assert metrics == {
+        "format_version": 1,
+        "kind": "eda",
+        "input": {"path": str(dataset), "sha256": hashlib.sha256(dataset.read_bytes()).hexdigest()},
+        "rows": 12,
+        "n_columns": 35,
+        "n_orders": 6,
+        "n_customers": 1,
+        "n_products": 1,
+        "period_start": "2018-01-01 00:00:00",
+        "period_end": "2018-01-01 05:00:00",
+        "checks": check_dataset(working_frame).to_dict("records"),
+    }
+    for key in ("format_version", "rows", "n_columns", "n_orders", "n_customers", "n_products"):
+        assert type(metrics[key]) is int
+    assert len(metrics["checks"]) == 7
+    for check in metrics["checks"]:
+        assert set(check) == {"Проверка", "Результат", "Фактически", "Ожидается"}
+        assert all(isinstance(value, str) for value in check.values())
+        assert check["Результат"] == "OK"
+    assert metrics_text == json.dumps(metrics, ensure_ascii=False, allow_nan=False, indent=2) + "\n"
+
     html = paths.html_path.read_text(encoding="utf-8")
     parser = HTMLAssets()
     parser.feed(html)
@@ -62,12 +91,16 @@ def test_eda_executes_in_project_python_and_exports_standalone_html(
     assert parser.external_assets == []
     for expected in ["SHA-256", "Размеры и период", "2018-01-01 05:00:00", "Пропуски", "Ожидается", "Итог"]:
         assert expected in html
-    assert set(path.name for path in paths.html_path.parent.iterdir()) == {"report.html", "report.ipynb"}
+    assert set(path.name for path in paths.html_path.parent.iterdir()) == {
+        "report.html", "report.ipynb", "metrics.json",
+    }
 
 
 def test_invalid_data_stops_notebook_before_plots(working_frame, write_dataset, tmp_path):
     working_frame.loc[0, "price"] = 0
     output = tmp_path / "invalid report"
+    output.mkdir()
+    (output / "metrics.json").write_text('{"kind": "eda"}\n', encoding="utf-8")
     with pytest.raises(CellExecutionError, match="Конечная положительная цена"):
         report_dataset(write_dataset(working_frame), output)
     notebook = nbformat.read(output / "report.ipynb", as_version=4)
@@ -75,15 +108,56 @@ def test_invalid_data_stops_notebook_before_plots(working_frame, write_dataset, 
     assert any(output.output_type == "error" for output in outputs)
     assert not any("image/png" in output.get("data", {}) for output in outputs)
     assert not (output / "report.html").exists()
+    assert not (output / "metrics.json").exists()
 
 
 def test_kernel_technical_error_propagates(tmp_path):
+    (tmp_path / "metrics.json").write_text('{"kind": "eda"}\n', encoding="utf-8")
     with pytest.raises(CellExecutionError, match="rendering failed"):
         execute_report(
-            [nbformat.v4.new_code_cell("raise RuntimeError('rendering failed')")],
+            [nbformat.v4.new_code_cell(
+                "from pathlib import Path\n"
+                "assert not Path('metrics.json').exists()\n"
+                "raise RuntimeError('rendering failed')"
+            )],
             tmp_path, title="Failure",
         )
     assert not (tmp_path / "report.html").exists()
+    assert not (tmp_path / "metrics.json").exists()
+
+
+def test_report_kernel_uses_requested_thread_limit(tmp_path, monkeypatch):
+    monkeypatch.setenv("OMP_NUM_THREADS", "4")
+    monkeypatch.setenv("OPENBLAS_NUM_THREADS", "4")
+    paths = execute_report([
+        nbformat.v4.new_code_cell(
+            "import os\nimport numpy as np\nfrom threadpoolctl import threadpool_info\n"
+            "np.ones((4, 4)) @ np.ones((4, 4))\n"
+            "assert os.environ['OMP_NUM_THREADS'] == '1'\n"
+            "assert all(pool['num_threads'] == 1 for pool in threadpool_info())\n"
+            "print('thread policy verified')"
+        ),
+    ], tmp_path, title="Threads", thread_limit=1)
+    assert "thread policy verified" in paths.html_path.read_text()
+
+
+def test_metrics_serialization_handles_numpy_and_rejects_nonfinite_values(tmp_path):
+    path = tmp_path / "metrics.json"
+    write_metrics({
+        "count": np.int64(3), "score": np.float32(0.5), "drift": np.bool_(False),
+        "parameters": {"weights": np.array([1, 2])}, "reason": "Не определён",
+    }, path)
+    text = path.read_text(encoding="utf-8")
+    assert json.loads(text) == {
+        "count": 3, "score": 0.5, "drift": False,
+        "parameters": {"weights": [1, 2]}, "reason": "Не определён",
+    }
+    assert "Не определён" in text
+    invalid_path = tmp_path / "invalid.json"
+    for value in (float("nan"), float("inf"), -float("inf"), np.float32("nan"), np.array([np.inf])):
+        with pytest.raises(ValueError, match="Out of range float values"):
+            write_metrics({"value": value}, invalid_path)
+        assert not invalid_path.exists()
 
 
 def test_top_ten_ties_are_alphabetical_and_preserve_full_mass(working_frame):
@@ -125,7 +199,10 @@ def test_deda_executes_comparison_and_exports_standalone_html(
     reference = write_dataset(working_frame, "reference ' data.csv")
     batch = write_dataset(new_batch)
     before = [path.read_bytes() for path in (reference, batch)]
-    paths = report_drift(str(batch), str(reference), str(tmp_path / "DEDA report"))
+    paths = report_drift(
+        str(batch), str(reference), str(tmp_path / "DEDA report"),
+        thresholds=DriftThresholds(price=0.2, category=0.3, state=0.4),
+    )
     notebook = nbformat.read(paths.notebook_path, as_version=4)
     nbformat.validate(notebook)
     code = [cell for cell in notebook.cells if cell.cell_type == "code"]
@@ -143,6 +220,34 @@ def test_deda_executes_comparison_and_exports_standalone_html(
     assert "check_combination(reference, batch)" in source
     assert "evaluate_drift(reference, batch, thresholds=thresholds)" in source
 
+    metrics_text = paths.metrics_path.read_text(encoding="utf-8")
+    metrics = json.loads(metrics_text)
+    assert metrics == {
+        "format_version": 1,
+        "kind": "deda",
+        "inputs": {
+            role: {"path": str(path), "sha256": hashlib.sha256(content).hexdigest(), "rows": 12}
+            for role, path, content in zip(("reference", "batch"), (reference, batch), before)
+        },
+        "drift_detected": False,
+        "metrics": [
+            {"feature": "price", "measure": "KS D", "value": 0.0, "threshold": 0.2, "drift": False},
+            {"feature": "product_category_name", "measure": "TVD", "value": 0.0, "threshold": 0.3, "drift": False},
+            {"feature": "customer_state", "measure": "TVD", "value": 0.0, "threshold": 0.4, "drift": False},
+        ],
+        "thresholds": {"price": 0.2, "category": 0.3, "state": 0.4},
+    }
+    assert type(metrics["format_version"]) is int
+    assert all(type(value["rows"]) is int for value in metrics["inputs"].values())
+    assert metrics["drift_detected"] is False
+    for metric in metrics["metrics"]:
+        assert type(metric["value"]) is float
+        assert type(metric["threshold"]) is float
+        assert metric["drift"] is False
+        assert metric["drift"] == (metric["value"] >= metric["threshold"])
+    assert metrics["drift_detected"] == any(metric["drift"] for metric in metrics["metrics"])
+    assert metrics_text == json.dumps(metrics, ensure_ascii=False, allow_nan=False, indent=2) + "\n"
+
     html = paths.html_path.read_text(encoding="utf-8")
     parser = HTMLAssets()
     parser.feed(html)
@@ -155,7 +260,9 @@ def test_deda_executes_comparison_and_exports_standalone_html(
     ]:
         assert expected in html
     assert "НЕ ПРОЙДЕНА" not in html
-    assert {path.name for path in paths.html_path.parent.iterdir()} == {"report.html", "report.ipynb"}
+    assert {path.name for path in paths.html_path.parent.iterdir()} == {
+        "report.html", "report.ipynb", "metrics.json",
+    }
     assert [path.read_bytes() for path in (reference, batch)] == before
 
 

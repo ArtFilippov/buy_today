@@ -1,13 +1,16 @@
-"""Execute report notebooks in the caller's Python and export standalone HTML."""
+"""Execute report notebooks in the caller's Python and export HTML and metrics."""
 
 from dataclasses import dataclass
 from html import escape
+import json
+import os
 from pathlib import Path
 import sys
 
 from nbclient import NotebookClient
 from nbconvert import HTMLExporter
 import nbformat
+import numpy as np
 
 
 @dataclass(frozen=True)
@@ -15,18 +18,48 @@ class ReportPaths:
     notebook_path: Path
     html_path: Path
 
+    @property
+    def metrics_path(self) -> Path:
+        return self.notebook_path.with_name("metrics.json")
+
+
+def write_metrics(metrics: dict, path: Path | str = "metrics.json") -> None:
+    """Serialize computed values from a notebook's final cell, without NaN/Inf."""
+    def convert(value):
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        raise TypeError(f"Cannot serialize {type(value).__name__} as report metrics")
+
+    content = json.dumps(
+        metrics, ensure_ascii=False, allow_nan=False, indent=2, default=convert,
+    )
+    Path(path).write_text(content + "\n", encoding="utf-8")
+
 
 def execute_report(
-    cells: list[nbformat.NotebookNode], output_dir: Path | str, *, title: str
+    cells: list[nbformat.NotebookNode], output_dir: Path | str, *, title: str,
+    thread_limit: int | None = None,
 ) -> ReportPaths:
     """Write source, execute in a fresh kernel, save outputs, then export HTML.
 
     Errors propagate to the caller; a partially executed notebook is retained
     for inspection. No rollback of the report directory or input data is done.
     """
+    kernel_options = {}
+    if thread_limit is not None:
+        if isinstance(thread_limit, bool) or not isinstance(thread_limit, int) or thread_limit <= 0:
+            raise ValueError("thread_limit must be a positive integer")
+        kernel_options["env"] = os.environ | {
+            name: str(thread_limit) for name in (
+                "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "BLIS_NUM_THREADS",
+            )
+        }
     output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     paths = ReportPaths(output_dir / "report.ipynb", output_dir / "report.html")
+    paths.metrics_path.unlink(missing_ok=True)
     notebook = nbformat.v4.new_notebook(cells=cells, metadata={
         "kernelspec": {
             "name": "python3", "display_name": "Python 3 (ipykernel)", "language": "python",
@@ -44,7 +77,7 @@ def execute_report(
         sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}",
     ]
     try:
-        client.execute()
+        client.execute(**kernel_options)
     finally:
         nbformat.write(notebook, paths.notebook_path)
 

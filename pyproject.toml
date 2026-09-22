@@ -19,6 +19,7 @@ dependencies = [
     "pandas>=3.0.6",
     "scikit-learn>=1.6.0",
     "scipy>=1.14.1",
+    "threadpoolctl>=3.1",
 ]
 
 [project.scripts]

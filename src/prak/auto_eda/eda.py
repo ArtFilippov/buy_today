@@ -42,7 +42,7 @@ def dataset_conclusion(frame: pd.DataFrame) -> str:
 
 
 def report_dataset(dataset_path: Path | str, output_dir: Path | str) -> ReportPaths:
-    """Create report.ipynb and report.html; raise on invalid data or execution failure."""
+    """Create notebook, HTML and metrics; raise on invalid data or execution failure."""
     dataset_path = Path(dataset_path).resolve()
     markdown = nbformat.v4.new_markdown_cell
 
@@ -69,6 +69,7 @@ def report_dataset(dataset_path: Path | str, output_dir: Path | str) -> ReportPa
             from prak.schema import read_dataset
             from prak.auto_eda.checks import check_dataset
             from prak.auto_eda.eda import dataset_summary, dataset_conclusion
+            from prak.auto_eda.notebook import write_metrics
             from prak.auto_eda.plots import plot_price, plot_categories, plot_states
 
             %matplotlib inline
@@ -87,7 +88,7 @@ def report_dataset(dataset_path: Path | str, output_dir: Path | str) -> ReportPa
                 display(HTML(table.to_html(index=False, escape=True, border=0)))
         """),
         markdown("## Размеры и период\nДаты покупки без часового пояса, как в исходном CSV."),
-        code("show_table(dataset_summary(frame))"),
+        code("summary = dataset_summary(frame)\nshow_table(summary)"),
         markdown("""## Обязательные проверки
 Нарушение условия немедленно завершает исполнение. Хронология — неубывание
 времени покупки; цепочка «оплата → перевозчик → доставка» не проверяется.
@@ -118,5 +119,21 @@ Top-10 по числу позиций этого датасета; равенс�
         code("figure = plot_states(frame)\nplt.show()\nplt.close(figure)"),
         markdown("## Итог"),
         code("print(dataset_conclusion(frame))"),
+        code("""
+            rows, n_columns, n_orders, n_customers, n_products, period_start, period_end = summary['Значение']
+            write_metrics({
+                'format_version': 1,
+                'kind': 'eda',
+                'input': {'path': str(dataset_path), 'sha256': digest},
+                'rows': int(rows),
+                'n_columns': int(n_columns),
+                'n_orders': int(n_orders),
+                'n_customers': int(n_customers),
+                'n_products': int(n_products),
+                'period_start': period_start,
+                'period_end': period_end,
+                'checks': checks.to_dict('records'),
+            })
+        """),
     ]
     return execute_report(cells, output_dir, title="EDA · один датасет Olist")

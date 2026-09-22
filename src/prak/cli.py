@@ -1,6 +1,7 @@
 """Command-line entry point for the local Olist pipeline."""
 
 import argparse
+from dataclasses import replace
 from functools import partial
 from math import isfinite
 from pathlib import Path
@@ -12,7 +13,9 @@ from prak.clustering.report import report_clustering
 from prak.clustering.training import train_clustering
 from prak.generation import generate_dataset
 from prak.preparation import prepare_data
-from prak.ranking import RandomRanker, SVDRanker, report_ranking, train_ranker
+from prak.pipeline import PipelineConfig, read_pipeline_config, run_pipeline
+from prak.ranking import RandomRanker, SVDRanker, export_recommendations, report_ranking, train_ranker
+from prak.summary import report_summary
 from prak.update import initialize_reference, update_reference
 
 
@@ -62,6 +65,36 @@ def _positive_float(value: str) -> float:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="prak", description="Локальный конвейер Olist")
     commands = parser.add_subparsers(dest="command", required=True)
+    run = commands.add_parser(
+        "run", help="выполнить полный цикл для следующего батча или остатка потока",
+        description="Один ранжировщик на прогон; параметры фиксируются при первом запуске.",
+    )
+    run.add_argument("--run-dir", type=Path, required=True, help="новый или существующий каталог прогона")
+    run.add_argument("--data-dir", type=Path, help="подготовленный поток; обязателен для нового прогона")
+    run.add_argument("--all", action="store_true", help="обработать все оставшиеся батчи")
+    run.add_argument("--model", choices=["random", "svd"], help="один ранжировщик; сначала по умолчанию svd")
+    run.add_argument("--random-state", type=_random_state)
+    run.add_argument("--temperature", type=_positive_float, help="температура TimestampDistance, по умолчанию 86400 секунд")
+    for name, help_text in (
+        ("initial-users", "новые пользователи первого батча; по умолчанию 2000"),
+        ("additional-users", "новые пользователи каждого следующего батча; по умолчанию 250"),
+        ("k", "K оценки; по умолчанию 10"),
+        ("svd-n-components", "компоненты SVD; по умолчанию 32"),
+        ("svd-n-iter", "итерации SVD; по умолчанию 7"),
+        ("temporal-n-clusters", "число кластеров временной модели; по умолчанию выбирает модель"),
+        ("max-evaluation-rows", "лимит оценки кластеризации; по умолчанию 1000"),
+    ):
+        run.add_argument(f"--{name}", type=_positive_int, help=help_text)
+    run.add_argument("--split-sizes", type=_positive_int, nargs=3, metavar=("TRAIN", "VALIDATION", "TEST"))
+    for feature in ("price", "category", "state"):
+        run.add_argument(f"--{feature}-threshold", type=_drift_threshold)
+    inference = commands.add_parser("inference", help="сохранить рекомендации выбранной модели для пользователя")
+    inference.add_argument("--model-dir", type=Path, required=True)
+    inference.add_argument("--user-id", required=True)
+    inference.add_argument("--k", type=_positive_int, default=10)
+    inference.add_argument("--output", type=Path, required=True, help="CSV: user_id, rank, product_id")
+    summary = commands.add_parser("summary", help="сводка завершённых шагов одного прогона: HTML, JSON, CSV")
+    summary.add_argument("--run-dir", type=Path, required=True)
     prepare = commands.add_parser(
         "prepare", help="собрать, очистить и разбить Olist на батчи",
         description="Подготовить рабочий датасет Olist и хронологический поток батчей.",
@@ -178,6 +211,45 @@ def main(argv: list[str] | None = None) -> None:
     evaluate.add_argument("--max-evaluation-rows", type=_positive_int, default=1000)
     evaluate.add_argument("--random-state", type=_random_state, default=42)
     args = parser.parse_args(argv)
+    # These commands expose execution failures as exceptions, including in the
+    # Python entry point. argparse still handles command-line syntax errors.
+    if args.command == "run":
+        options = {
+            name: getattr(args, name) for name in PipelineConfig.__dataclass_fields__
+            if name != "thresholds" and getattr(args, name) is not None
+        }
+        thresholds = {
+            name: getattr(args, f"{name}_threshold") for name in ("price", "category", "state")
+            if getattr(args, f"{name}_threshold") is not None
+        }
+        config = None
+        if options or thresholds:
+            base = read_pipeline_config(args.run_dir) if args.run_dir.exists() else PipelineConfig()
+            if options.get("model", base.model) != "svd" and (
+                args.svd_n_components is not None or args.svd_n_iter is not None
+            ):
+                parser.error("--svd-n-components и --svd-n-iter требуют --model svd")
+            if "split_sizes" in options:
+                options["split_sizes"] = tuple(options["split_sizes"])
+            if thresholds:
+                options["thresholds"] = replace(base.thresholds, **thresholds)
+            config = replace(base, **options)
+        results = run_pipeline(args.run_dir, data_dir=args.data_dir, config=config, all_batches=args.all)
+        for result in results:
+            print(f"Шаг {result.step_index:03d}: {result.manifest_path}")
+        if not results:
+            print("Поток завершён: новых батчей нет.")
+        return
+    if args.command == "inference":
+        output = export_recommendations(args.model_dir, args.user_id, args.output, k=args.k)
+        print(f"Рекомендации: {output}")
+        return
+    if args.command == "summary":
+        paths = report_summary(args.run_dir)
+        print(f"HTML: {paths.html_path}")
+        print(f"JSON: {paths.json_path}")
+        print(f"CSV: {paths.csv_path}")
+        return
     if args.command == "rank" and args.model != "svd" and (
         args.svd_n_components is not None or args.svd_n_iter is not None
     ):
