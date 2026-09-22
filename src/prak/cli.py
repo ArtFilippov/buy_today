@@ -12,7 +12,7 @@ from prak.clustering.report import report_clustering
 from prak.clustering.training import train_clustering
 from prak.generation import generate_dataset
 from prak.preparation import prepare_data
-from prak.ranking import RandomRanker, report_ranking, train_ranker
+from prak.ranking import RandomRanker, SVDRanker, report_ranking, train_ranker
 from prak.update import initialize_reference, update_reference
 
 
@@ -145,12 +145,20 @@ def main(argv: list[str] | None = None) -> None:
     generate.add_argument("--random-state", type=_random_state, default=42)
     rank = commands.add_parser(
         "rank", help="обучить ранжировщик на train и сохранить модель",
-        description="Случайный бейзлайн на накопленном train и полном каталоге товаров.",
+        description="Random или SVD на накопленном train и полном каталоге товаров.",
     )
     rank.add_argument("--dataset-dir", type=Path, required=True, help="снимок модельных историй")
     rank.add_argument("--output-dir", type=Path, required=True, help="новый каталог модели")
-    rank.add_argument("--model", choices=["random"], default="random")
+    rank.add_argument("--model", choices=["random", "svd"], default="random")
     rank.add_argument("--random-state", type=_random_state, default=42)
+    rank.add_argument(
+        "--svd-n-components", type=_positive_int,
+        help="число компонент SVD; по умолчанию определяется моделью (32)",
+    )
+    rank.add_argument(
+        "--svd-n-iter", type=_positive_int,
+        help="число итераций SVD; по умолчанию определяется моделью (7)",
+    )
     ranking_evaluate = commands.add_parser(
         "evaluate-ranking", help="оценить сохранённый ранжировщик: Recall@K и NDCG@K",
         description="Независимая оценка выбранного split без обучения; JSON и CSV по пользователям.",
@@ -170,6 +178,10 @@ def main(argv: list[str] | None = None) -> None:
     evaluate.add_argument("--max-evaluation-rows", type=_positive_int, default=1000)
     evaluate.add_argument("--random-state", type=_random_state, default=42)
     args = parser.parse_args(argv)
+    if args.command == "rank" and args.model != "svd" and (
+        args.svd_n_components is not None or args.svd_n_iter is not None
+    ):
+        parser.error("--svd-n-components и --svd-n-iter требуют --model svd")
     try:
         if args.command == "prepare":
             result = prepare_data(
@@ -203,8 +215,17 @@ def main(argv: list[str] | None = None) -> None:
                 split_sizes=args.split_sizes, random_state=args.random_state,
             )
         elif args.command == "rank":
+            if args.model == "svd":
+                svd_options = {}
+                if args.svd_n_components is not None:
+                    svd_options["n_components"] = args.svd_n_components
+                if args.svd_n_iter is not None:
+                    svd_options["n_iter"] = args.svd_n_iter
+                ranker = SVDRanker(random_state=args.random_state, **svd_options)
+            else:
+                ranker = RandomRanker(random_state=args.random_state)
             ranking_model = train_ranker(
-                args.dataset_dir, args.output_dir, ranker=RandomRanker(random_state=args.random_state),
+                args.dataset_dir, args.output_dir, ranker=ranker,
             )
         elif args.command == "evaluate-ranking":
             ranking_report = report_ranking(

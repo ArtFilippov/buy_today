@@ -10,7 +10,7 @@ import pytest
 
 from prak.clustering.distances import TimestampDistance
 from prak.generation import generate_dataset
-from prak.ranking import RandomRanker, read_ranking_data, report_ranking, train_ranker
+from prak.ranking import RandomRanker, SVDRanker, read_ranking_data, report_ranking, train_ranker
 
 
 def contents(directory):
@@ -18,19 +18,24 @@ def contents(directory):
             for path in directory.rglob("*") if path.is_file()}
 
 
-def test_training_reads_only_train_and_catalog_and_records_provenance(ranking_snapshot, tmp_path, monkeypatch):
+@pytest.mark.parametrize("prototype", [
+    RandomRanker(random_state=np.int64(17)),
+    SVDRanker(n_components=1, random_state=np.int64(17)),
+], ids=["random", "svd"])
+def test_training_reads_only_train_and_catalog_and_records_provenance(
+    ranking_snapshot, tmp_path, monkeypatch, prototype,
+):
     (ranking_snapshot / "validation.csv").unlink()
     (ranking_snapshot / "test.csv").unlink()
     before = contents(ranking_snapshot)
     fitted = []
-    original_fit = RandomRanker.fit
+    original_fit = type(prototype).fit
 
     def record_fit(self, X, y=None):
         fitted.append(X)
         return original_fit(self, X, y)
 
-    monkeypatch.setattr(RandomRanker, "fit", record_fit)
-    prototype = RandomRanker(random_state=np.int64(17))
+    monkeypatch.setattr(type(prototype), "fit", record_fit)
     paths = train_ranker(ranking_snapshot, tmp_path / "model", ranker=prototype)
     assert not hasattr(prototype, "catalog_")
     assert len(fitted) == 1
@@ -46,7 +51,7 @@ def test_training_reads_only_train_and_catalog_and_records_provenance(ranking_sn
     manifest = json.loads(paths.manifest_path.read_text())
     assert manifest["format_version"] == 1
     assert manifest["n_users"] == 2
-    assert manifest["model"]["parameters"] == {"random_state": 17}
+    assert manifest["model"]["parameters"] == prototype.get_params()
     assert manifest["model"]["sha256"] == hashlib.sha256(paths.model_path.read_bytes()).hexdigest()
     for name, count in [("train", 6), ("catalog", 12)]:
         source = ranking_snapshot / f"{name}.csv"
@@ -56,11 +61,12 @@ def test_training_reads_only_train_and_catalog_and_records_provenance(ranking_sn
 
 
 @pytest.mark.parametrize("split", ["validation", "test"])
+@pytest.mark.parametrize("ranker", [RandomRanker(), SVDRanker(n_components=1)], ids=["random", "svd"])
 def test_saved_evaluation_needs_only_heldout_and_catalog_and_never_fits(
-    ranking_snapshot, tmp_path, monkeypatch, split,
+    ranking_snapshot, tmp_path, monkeypatch, split, ranker,
 ):
     model_dir = tmp_path / "model"
-    train_ranker(ranking_snapshot, model_dir)
+    train_ranker(ranking_snapshot, model_dir, ranker=ranker)
     (ranking_snapshot / "train.csv").unlink()
     (ranking_snapshot / ("test.csv" if split == "validation" else "validation.csv")).unlink()
     before_data, before_model = contents(ranking_snapshot), contents(model_dir)
@@ -68,7 +74,7 @@ def test_saved_evaluation_needs_only_heldout_and_catalog_and_never_fits(
     def forbidden_fit(*args, **kwargs):
         pytest.fail("Evaluation must never call fit")
 
-    monkeypatch.setattr(RandomRanker, "fit", forbidden_fit)
+    monkeypatch.setattr(type(ranker), "fit", forbidden_fit)
     paths = report_ranking(ranking_snapshot, model_dir, model_dir / split, split=split, k=12)
     metrics = json.loads(paths.metrics_path.read_text())
     users = pd.read_csv(paths.per_user_path, dtype={"user_id": "string"}, keep_default_na=False)
@@ -155,8 +161,9 @@ def test_write_failure_never_publishes_partial_artifacts(ranking_snapshot, tmp_p
     assert contents(tmp_path) == before
 
 
+@pytest.mark.parametrize("ranker", [RandomRanker(), SVDRanker(n_components=2)], ids=["random", "svd"])
 def test_generated_cumulative_snapshots_train_and_evaluate_independently(
-    working_frame, new_batch, write_dataset, tmp_path,
+    working_frame, new_batch, write_dataset, tmp_path, ranker,
 ):
     working_frame["product_id"] = pd.array([f"p{i}" for i in range(12)], dtype="string")
     new_batch["product_id"] = pd.array([f"p{i}" for i in range(6, 18)], dtype="string")
@@ -174,7 +181,7 @@ def test_generated_cumulative_snapshots_train_and_evaluate_independently(
     accumulated = read_ranking_data(second.output_dir)
     pd.testing.assert_frame_equal(accumulated.interactions.iloc[:9], old_data.interactions)
     for index, snapshot, count, catalog_size in [(0, first, 3, 12), (1, second, 5, 18)]:
-        paths = train_ranker(snapshot.output_dir, tmp_path / f"model{index}")
+        paths = train_ranker(snapshot.output_dir, tmp_path / f"model{index}", ranker=ranker)
         assert len(joblib.load(paths.model_path).user_ids_) == count
         report = report_ranking(
             snapshot.output_dir, paths.model_path.parent, tmp_path / f"report{index}",

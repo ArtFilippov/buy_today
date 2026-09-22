@@ -15,16 +15,24 @@ def run_cli(*args, cwd):
     )
 
 
-def test_rank_and_both_evaluation_splits_from_another_cwd(ranking_snapshot, tmp_path):
+@pytest.mark.parametrize("model,options,parameters", [
+    ("random", [], {"random_state": 73}),
+    ("svd", ["--svd-n-components", "1", "--svd-n-iter", "5"],
+     {"random_state": 73, "n_components": 1, "n_iter": 5}),
+])
+def test_rank_and_both_evaluation_splits_from_another_cwd(
+    ranking_snapshot, tmp_path, model, options, parameters,
+):
     trained = run_cli(
         "rank", "--dataset-dir", ranking_snapshot.name, "--output-dir", "model dir",
-        "--model", "random", "--random-state", "73", cwd=tmp_path,
+        "--model", model, "--random-state", "73", *options, cwd=tmp_path,
     )
     assert trained.returncode == 0, trained.stderr
     model_dir = tmp_path / "model dir"
     assert str(model_dir / "model.joblib") in trained.stdout
     manifest = json.loads((model_dir / "manifest.json").read_text())
-    assert manifest["model"]["parameters"] == {"random_state": 73}
+    assert manifest["model"]["parameters"] == parameters
+    assert manifest["model"]["class"].endswith("SVDRanker" if model == "svd" else "RandomRanker")
     for split in ("validation", "test"):
         result = run_cli(
             "evaluate-ranking", "--dataset-dir", ranking_snapshot.name,
@@ -53,7 +61,11 @@ def test_help(command, tmp_path):
 @pytest.mark.parametrize("args", [
     ["rank"],
     ["rank", "--dataset-dir", "missing", "--output-dir", "out", "--random-state", "-1"],
-    ["rank", "--dataset-dir", "missing", "--output-dir", "out", "--model", "svd"],
+    ["rank", "--dataset-dir", "missing", "--output-dir", "out", "--model", "unknown"],
+    ["rank", "--dataset-dir", "missing", "--output-dir", "out", "--model", "svd", "--svd-n-components", "0"],
+    ["rank", "--dataset-dir", "missing", "--output-dir", "out", "--model", "svd", "--svd-n-iter", "1.5"],
+    ["rank", "--dataset-dir", "missing", "--output-dir", "out", "--svd-n-components", "1"],
+    ["rank", "--dataset-dir", "missing", "--output-dir", "out", "--svd-n-iter", "7"],
     ["evaluate-ranking", "--dataset-dir", "missing", "--model-dir", "model", "--output-dir", "out"],
     ["evaluate-ranking", "--dataset-dir", "missing", "--model-dir", "model", "--output-dir", "out", "--split", "train"],
     ["evaluate-ranking", "--dataset-dir", "missing", "--model-dir", "model", "--output-dir", "out", "--split", "test", "--k", "0"],
@@ -87,3 +99,17 @@ def test_k_larger_than_catalog_exits_one(ranking_snapshot, tmp_path, capsys):
     assert error.value.code == 1
     assert "k must" in capsys.readouterr().err
     assert not (tmp_path / "report").exists()
+
+
+def test_svd_defaults_and_dimension_error(ranking_snapshot, tmp_path, capsys):
+    output = tmp_path / "svd"
+    args = ["rank", "--dataset-dir", str(ranking_snapshot), "--output-dir", str(output),
+            "--model", "svd"]
+    with pytest.raises(SystemExit) as error:
+        main(args)
+    assert error.value.code == 1
+    assert "n_components" in capsys.readouterr().err
+    assert not output.exists()
+    main([*args, "--svd-n-components", "1"])
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert manifest["model"]["parameters"] == {"n_components": 1, "n_iter": 7, "random_state": 42}
