@@ -8,6 +8,7 @@ import pandas as pd
 from prak.auto_eda import DriftThresholds, report_dataset, report_drift
 from prak.auto_eda.checks import check_dataset
 from prak.auto_eda.notebook import ReportPaths
+from prak.progress import stage
 from prak.schema import DATE_FORMAT, SORT_KEY, read_dataset
 
 
@@ -25,14 +26,16 @@ def initialize_reference(
     Invalid input leaves an existing reference untouched. If EDA fails after
     writing, the new reference remains on disk and the error propagates.
     """
-    batch = read_dataset(batch_path)
-    check_dataset(batch)
-    reference_path = Path(reference_path).resolve()
-    reference_path.parent.mkdir(parents=True, exist_ok=True)
-    batch.sort_values(list(SORT_KEY)).to_csv(
-        reference_path, index=False, encoding="utf-8", date_format=DATE_FORMAT,
-    )
-    return report_dataset(reference_path, Path(output_dir) / "eda")
+    with stage("reference.write", reference_path=reference_path):
+        batch = read_dataset(batch_path)
+        check_dataset(batch)
+        reference_path = Path(reference_path).resolve()
+        reference_path.parent.mkdir(parents=True, exist_ok=True)
+        batch.sort_values(list(SORT_KEY)).to_csv(
+            reference_path, index=False, encoding="utf-8", date_format=DATE_FORMAT,
+        )
+    with stage("reference.eda", output_dir=Path(output_dir) / "eda"):
+        return report_dataset(reference_path, Path(output_dir) / "eda")
 
 
 def update_reference(
@@ -52,13 +55,16 @@ def update_reference(
     if not reference_path.is_file():
         raise FileNotFoundError(f"Эталон CSV не найден: {reference_path}")
     output_dir = Path(output_dir)
-    deda = report_drift(
-        batch_path, reference_path, output_dir / "deda", thresholds=thresholds,
-    )
-    reference = read_dataset(reference_path)
-    batch = read_dataset(batch_path)
-    pd.concat([reference, batch], ignore_index=True).sort_values(list(SORT_KEY)).to_csv(
-        reference_path, index=False, encoding="utf-8", date_format=DATE_FORMAT,
-    )
-    eda = report_dataset(reference_path, output_dir / "eda")
+    with stage("reference.deda", output_dir=output_dir / "deda"):
+        deda = report_drift(
+            batch_path, reference_path, output_dir / "deda", thresholds=thresholds,
+        )
+    with stage("reference.write", reference_path=reference_path):
+        reference = read_dataset(reference_path)
+        batch = read_dataset(batch_path)
+        pd.concat([reference, batch], ignore_index=True).sort_values(list(SORT_KEY)).to_csv(
+            reference_path, index=False, encoding="utf-8", date_format=DATE_FORMAT,
+        )
+    with stage("reference.eda", output_dir=output_dir / "eda"):
+        eda = report_dataset(reference_path, output_dir / "eda")
     return UpdateReports(deda=deda, eda=eda)

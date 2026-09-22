@@ -1,0 +1,19 @@
+# Allow only packaging inputs and tests. This excludes .git, .venv, data,
+# dataset, datasets, models, notebooks, visualizations, and research artifacts.
+**
+!Dockerfile
+!.dockerignore
+!README.md
+!pyproject.toml
+!uv.lock
+!src/
+!src/**
+!tests/
+!tests/**
+
+# Local caches must also stay out of the included source and test trees.
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ipynb_checkpoints/
+**/*.egg-info/

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from prak.progress import stage
 from prak.schema import COLUMNS, CSV_DTYPES, DATE_COLUMNS, DATE_FORMAT, DTYPES
 from prak.schema import ROW_KEY, SORT_KEY
 
@@ -236,91 +237,95 @@ def prepare_data(
         if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
             raise ValueError(f"{name} must be a positive integer")
     raw_dir, output_dir = Path(raw_dir).resolve(), Path(output_dir).resolve()
-    tables = {
-        name: pd.read_csv(
-            raw_dir / filename,
-            usecols=list(columns),
-            dtype={column: _SOURCE_DTYPES[column] for column in columns},
-            encoding="utf-8",
-            float_precision="round_trip",
+    with stage("preparation.read", raw_dir=raw_dir):
+        tables = {
+            name: pd.read_csv(
+                raw_dir / filename,
+                usecols=list(columns),
+                dtype={column: _SOURCE_DTYPES[column] for column in columns},
+                encoding="utf-8",
+                float_precision="round_trip",
+            )
+            for name, (filename, columns) in _SOURCES.items()
+        }
+    with stage("preparation.assemble"):
+        assembled, statistics = _assemble(tables)
+    with stage("preparation.clean", min_category_count=min_category_count):
+        cleaned = assembled.dropna(subset=list(COLUMNS)).astype(DTYPES)
+        if len(cleaned) < 2:
+            raise ValueError("At least two complete rows are required after cleaning")
+        statistics["stages"]["cleaned"] = _row_counts(cleaned)
+        statistics["rows_dropped_missing"] = len(assembled) - len(cleaned)
+
+        category_counts = cleaned["product_category_name"].value_counts()
+        retained_categories = category_counts.index[category_counts.ge(min_category_count)]
+        working = (
+            cleaned.loc[cleaned["product_category_name"].isin(retained_categories)]
+            .sort_values(list(SORT_KEY))
+            .reset_index(drop=True)
         )
-        for name, (filename, columns) in _SOURCES.items()
-    }
-    assembled, statistics = _assemble(tables)
-    cleaned = assembled.dropna(subset=list(COLUMNS)).astype(DTYPES)
-    if len(cleaned) < 2:
-        raise ValueError("At least two complete rows are required after cleaning")
-    statistics["stages"]["cleaned"] = _row_counts(cleaned)
-    statistics["rows_dropped_missing"] = len(assembled) - len(cleaned)
+        if len(working) < 2:
+            raise ValueError(
+                "At least two rows are required after category filtering; "
+                f"min_category_count={min_category_count}, retained rows={len(working)}"
+            )
+        statistics["stages"]["category_filtered"] = _row_counts(working)
+        statistics["rows_dropped_rare_categories"] = len(cleaned) - len(working)
+        statistics["categories_before_filtering"] = len(category_counts)
+        statistics["categories_after_filtering"] = len(retained_categories)
 
-    category_counts = cleaned["product_category_name"].value_counts()
-    retained_categories = category_counts.index[category_counts.ge(min_category_count)]
-    working = (
-        cleaned.loc[cleaned["product_category_name"].isin(retained_categories)]
-        .sort_values(list(SORT_KEY))
-        .reset_index(drop=True)
-    )
-    if len(working) < 2:
-        raise ValueError(
-            "At least two rows are required after category filtering; "
-            f"min_category_count={min_category_count}, retained rows={len(working)}"
+    with stage("preparation.write", output_dir=output_dir):
+        (output_dir / "batches").mkdir(parents=True, exist_ok=True)
+        working_path = output_dir / "working_dataset.csv"
+        working.to_csv(working_path, index=False, encoding="utf-8", date_format=DATE_FORMAT)
+
+        first_size = len(working) // 2
+        spans = [(0, first_size)] + [
+            (start, start + batch_size)
+            for start in range(first_size, len(working) - batch_size + 1, batch_size)
+        ]
+        batches = []
+        for index, (start, stop) in enumerate(spans):
+            batch = working.iloc[start:stop]
+            batch_id = f"batch_{index:03d}"
+            relative_path = f"batches/{batch_id}.csv"
+            batch.to_csv(
+                output_dir / relative_path, index=False,
+                encoding="utf-8", date_format=DATE_FORMAT,
+            )
+            batches.append({"id": batch_id, **_file_metadata(batch, relative_path)})
+        dropped_tail_rows = len(working) - spans[-1][1]
+        statistics["dropped_tail_rows"] = dropped_tail_rows
+
+        manifest = {
+            "format_version": 1,
+            "sources": {
+                "raw_dir": str(raw_dir),
+                "files": [
+                    {"path": filename, "rows": len(tables[name])}
+                    for name, (filename, _) in _SOURCES.items()
+                ],
+            },
+            "schema": {"columns": list(COLUMNS), "dtypes": DTYPES},
+            "parameters": {
+                "batch_size": batch_size,
+                "first_batch_rule": "N // 2",
+                "drop_last": True,
+                "sort_key": list(SORT_KEY),
+                "drop_missing": "any_of_selected_columns",
+                "min_category_count": min_category_count,
+            },
+            "statistics": statistics,
+            "working_dataset": _file_metadata(working, "working_dataset.csv"),
+            "batches": batches,
+        }
+        manifest_path = output_dir / "manifest.json"
+        manifest_path.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
-    statistics["stages"]["category_filtered"] = _row_counts(working)
-    statistics["rows_dropped_rare_categories"] = len(cleaned) - len(working)
-    statistics["categories_before_filtering"] = len(category_counts)
-    statistics["categories_after_filtering"] = len(retained_categories)
-
-    (output_dir / "batches").mkdir(parents=True, exist_ok=True)
-    working_path = output_dir / "working_dataset.csv"
-    working.to_csv(working_path, index=False, encoding="utf-8", date_format=DATE_FORMAT)
-
-    first_size = len(working) // 2
-    spans = [(0, first_size)] + [
-        (start, start + batch_size)
-        for start in range(first_size, len(working) - batch_size + 1, batch_size)
-    ]
-    batches = []
-    for index, (start, stop) in enumerate(spans):
-        batch = working.iloc[start:stop]
-        batch_id = f"batch_{index:03d}"
-        relative_path = f"batches/{batch_id}.csv"
-        batch.to_csv(
-            output_dir / relative_path, index=False,
-            encoding="utf-8", date_format=DATE_FORMAT,
+        (output_dir / "state.json").write_text(
+            json.dumps({"next_batch_index": 0}, indent=2) + "\n", encoding="utf-8"
         )
-        batches.append({"id": batch_id, **_file_metadata(batch, relative_path)})
-    dropped_tail_rows = len(working) - spans[-1][1]
-    statistics["dropped_tail_rows"] = dropped_tail_rows
-
-    manifest = {
-        "format_version": 1,
-        "sources": {
-            "raw_dir": str(raw_dir),
-            "files": [
-                {"path": filename, "rows": len(tables[name])}
-                for name, (filename, _) in _SOURCES.items()
-            ],
-        },
-        "schema": {"columns": list(COLUMNS), "dtypes": DTYPES},
-        "parameters": {
-            "batch_size": batch_size,
-            "first_batch_rule": "N // 2",
-            "drop_last": True,
-            "sort_key": list(SORT_KEY),
-            "drop_missing": "any_of_selected_columns",
-            "min_category_count": min_category_count,
-        },
-        "statistics": statistics,
-        "working_dataset": _file_metadata(working, "working_dataset.csv"),
-        "batches": batches,
-    }
-    manifest_path = output_dir / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (output_dir / "state.json").write_text(
-        json.dumps({"next_batch_index": 0}, indent=2) + "\n", encoding="utf-8"
-    )
     return PreparationResult(
         working_dataset_path=working_path,
         manifest_path=manifest_path,

@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass
 from functools import partial
 import hashlib
 import json
+import logging
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import perf_counter
@@ -20,8 +21,12 @@ from prak.clustering.report import report_clustering
 from prak.clustering.training import train_clustering
 from prak.generation import generate_dataset
 from prak.generation.histories import check_parameters
+from prak.progress import stage
 from prak.ranking import RandomRanker, SVDRanker, report_ranking, train_ranker
 from prak.update import initialize_reference, update_reference
+
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -196,36 +201,48 @@ def run_next_batch(
 
     data_dir is required for a new run; config then defaults to PipelineConfig().
     Supplied arguments on continuation must match the saved configuration.
-    Errors are raised unchanged, without retries, recovery, or advancing state.
+    Errors are raised unchanged, without retries or recovery. State advances
+    only after a completed batch; later logging failures do not undo the commit.
     """
     run_dir = Path(run_dir).resolve()
     if not run_dir.exists():
         if data_dir is None:
             raise ValueError("data_dir is required for a new run")
-        _initialize(run_dir, data_dir, PipelineConfig() if config is None else config)
-    record, state = _load_run(run_dir)
-    settings = _parse_config(record["parameters"])
-    if config is not None and _config_dict(config) != record["parameters"]:
-        raise ValueError("Run parameters are fixed; create a new run to change them")
-    source = Path(record["stream"]["path"])
-    if data_dir is not None and Path(data_dir).resolve() != source.parent:
-        raise ValueError("Run stream differs from data_dir")
-    # Completed steps are checked before any writes, including on exhaustion.
-    read_completed_steps(run_dir)
-    index = state["next_batch_index"]
+        with stage("pipeline.initialize", run_dir=run_dir):
+            _initialize(run_dir, data_dir, PipelineConfig() if config is None else config)
+    with stage("pipeline.integrity", run_dir=run_dir):
+        record, state = _load_run(run_dir)
+        settings = _parse_config(record["parameters"])
+        if config is not None and _config_dict(config) != record["parameters"]:
+            raise ValueError("Run parameters are fixed; create a new run to change them")
+        source = Path(record["stream"]["path"])
+        if data_dir is not None and Path(data_dir).resolve() != source.parent:
+            raise ValueError("Run stream differs from data_dir")
+        # Completed steps are checked before any writes, including on exhaustion.
+        read_completed_steps(run_dir)
+        index = state["next_batch_index"]
+        if index < len(record["batches"]):
+            if _digest(source) != record["stream"]["sha256"]:
+                raise ValueError("Preparation manifest SHA-256 mismatch")
+            batch = record["batches"][index]
+            if _digest(batch["path"]) != batch["sha256"]:
+                raise ValueError("Batch SHA-256 mismatch")
+            reference = run_dir / "reference.csv"
+            if index:
+                if _digest(reference) != state["reference_sha256"]:
+                    raise ValueError("Reference SHA-256 mismatch; unfinished update or external change")
+            elif reference.exists():
+                raise ValueError("Unexpected reference before the first completed step")
     if index == len(record["batches"]):
+        _logger.info(
+            "event=stream_exhausted batch_index=%s run_dir=%s", index, run_dir,
+            extra={"event": "stream_exhausted", "batch_index": index},
+        )
         return None
-    if _digest(source) != record["stream"]["sha256"]:
-        raise ValueError("Preparation manifest SHA-256 mismatch")
-    batch = record["batches"][index]
-    if _digest(batch["path"]) != batch["sha256"]:
-        raise ValueError("Batch SHA-256 mismatch")
-    reference = run_dir / "reference.csv"
-    if index:
-        if _digest(reference) != state["reference_sha256"]:
-            raise ValueError("Reference SHA-256 mismatch; unfinished update or external change")
-    elif reference.exists():
-        raise ValueError("Unexpected reference before the first completed step")
+    _logger.info(
+        "event=batch_start batch_index=%s run_dir=%s", index, run_dir,
+        extra={"event": "batch_start", "batch_index": index},
+    )
     output_dir = run_dir / f"steps/step_{index:03d}"
     # An exclusive step directory also prevents a second writer/repeated append.
     output_dir.mkdir(parents=True, exist_ok=False)
@@ -233,10 +250,11 @@ def run_next_batch(
     started = perf_counter()
 
     def timed(name, function, *args, **kwargs):
-        start = perf_counter()
-        result = function(*args, **kwargs)
-        durations[name] = perf_counter() - start
-        return result
+        with stage(name, batch_index=index):
+            start = perf_counter()
+            result = function(*args, **kwargs)
+            durations[name] = perf_counter() - start
+            return result
 
     if index == 0:
         timed("reference", initialize_reference, batch["path"], reference, output_dir)
@@ -302,10 +320,15 @@ def run_next_batch(
         "files": {name: _digest(run_dir / name) for name in artifacts.values() if name.endswith(".json")},
     }
     manifest_path = output_dir / "manifest.json"
-    _write_json(manifest_path, step)
-    state["steps"].append({"path": f"{prefix}/manifest.json", "sha256": _digest(manifest_path)})
-    state.update(next_batch_index=index + 1, reference_sha256=step["reference"]["sha256"])
-    _write_json(run_dir / "state.json", state)
+    with stage("pipeline.commit", batch_index=index):
+        _write_json(manifest_path, step)
+        state["steps"].append({"path": f"{prefix}/manifest.json", "sha256": _digest(manifest_path)})
+        state.update(next_batch_index=index + 1, reference_sha256=step["reference"]["sha256"])
+        _write_json(run_dir / "state.json", state)
+    _logger.info(
+        "event=batch_committed batch_index=%s run_dir=%s", index, run_dir,
+        extra={"event": "batch_committed", "batch_index": index},
+    )
     return StepResult(index, output_dir, manifest_path)
 
 

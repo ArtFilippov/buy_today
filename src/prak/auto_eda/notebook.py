@@ -12,6 +12,8 @@ from nbconvert import HTMLExporter
 import nbformat
 import numpy as np
 
+from prak.progress import stage
+
 
 @dataclass(frozen=True)
 class ReportPaths:
@@ -66,7 +68,8 @@ def execute_report(
         },
         "title": title,
     })
-    nbformat.write(notebook, paths.notebook_path)
+    with stage("notebook.serialize", output_dir=output_dir, phase="source"):
+        nbformat.write(notebook, paths.notebook_path)
     client = NotebookClient(
         notebook, timeout=180, kernel_name="python3", allow_errors=False,
         resources={"metadata": {"path": str(output_dir)}},
@@ -77,18 +80,21 @@ def execute_report(
         sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}",
     ]
     try:
-        client.execute(**kernel_options)
+        with stage("notebook.execute", output_dir=output_dir):
+            client.execute(**kernel_options)
     finally:
-        nbformat.write(notebook, paths.notebook_path)
+        with stage("notebook.serialize", output_dir=output_dir, phase="executed"):
+            nbformat.write(notebook, paths.notebook_path)
 
     # The basic template is an HTML fragment with inline PNGs, without CDN JS,
     # MathJax or external stylesheets. Supply a small, entirely local document.
-    exporter = HTMLExporter(
-        template_name="basic", exclude_input=True,
-        exclude_input_prompt=True, exclude_output_prompt=True,
-    )
-    body, _ = exporter.from_notebook_node(notebook)
-    html = f"""<!doctype html>
+    with stage("notebook.render", output_dir=output_dir):
+        exporter = HTMLExporter(
+            template_name="basic", exclude_input=True,
+            exclude_input_prompt=True, exclude_output_prompt=True,
+        )
+        body, _ = exporter.from_notebook_node(notebook)
+        html = f"""<!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{escape(title)}</title>
@@ -104,5 +110,5 @@ img {{ max-width: 100%; height: auto; }}
 pre {{ white-space: pre-wrap; overflow-wrap: anywhere; }}
 </style></head><body>{body}</body></html>
 """
-    paths.html_path.write_text(html, encoding="utf-8")
+        paths.html_path.write_text(html, encoding="utf-8")
     return paths
