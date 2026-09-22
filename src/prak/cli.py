@@ -4,6 +4,7 @@ import argparse
 from dataclasses import replace
 from functools import partial
 from math import isfinite
+import os
 from pathlib import Path
 
 from prak.auto_eda import DriftThresholds, report_dataset, report_drift
@@ -15,6 +16,7 @@ from prak.generation import generate_dataset
 from prak.preparation import prepare_data
 from prak.pipeline import PipelineConfig, read_pipeline_config, run_pipeline
 from prak.ranking import RandomRanker, SVDRanker, export_recommendations, report_ranking, train_ranker
+from prak.ranking import parse_model_spec, report_ranking_benchmark, run_ranking_benchmark
 from prak.summary import report_summary
 from prak.update import initialize_reference, update_reference
 
@@ -60,6 +62,14 @@ def _positive_float(value: str) -> float:
     if not isfinite(number) or number <= 0:
         raise argparse.ArgumentTypeError(message)
     return number
+
+
+def _benchmark_model(value: str) -> str:
+    try:
+        parse_model_spec(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+    return value
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -201,6 +211,23 @@ def main(argv: list[str] | None = None) -> None:
     ranking_evaluate.add_argument("--output-dir", type=Path, required=True, help="новый каталог оценки")
     ranking_evaluate.add_argument("--split", choices=["validation", "test"], required=True)
     ranking_evaluate.add_argument("--k", type=_positive_int, default=10)
+    benchmark = commands.add_parser(
+        "benchmark-ranking", help="сравнить конфигурации ранжировщиков на готовых датасетах",
+        description="Одно свежее обучение на train и оценка на test каждой пары модель × датасет.",
+    )
+    benchmark.add_argument("--output", type=Path, required=True, help="общий корень результатов")
+    benchmark.add_argument("--dataset", type=Path, action="append", required=True,
+                           help="готовая папка с train.csv, test.csv и catalog.csv; можно повторять")
+    benchmark.add_argument("--model", type=_benchmark_model, action="append", required=True,
+                           help='спецификация, например "svd --n-components 16 --n-iter 7"; можно повторять')
+    benchmark.add_argument("--k", type=_positive_int, default=10)
+    benchmark.add_argument("--no-save-model", action="store_true", help="сохранить только метрики и метаданные")
+    benchmark_report = commands.add_parser(
+        "benchmark-ranking-report", help="HTML/CSV сравнения последних завершённых benchmark runs",
+        description="Общий рейтинг по максимуму NDCG@K по датасетам; без обучения и чтения датасетов.",
+    )
+    benchmark_report.add_argument("root", type=Path, help="один общий корень результатов benchmark")
+    benchmark_report.add_argument("--output", type=Path, required=True, help="путь HTML; CSV записывается рядом")
     evaluate = commands.add_parser(
         "evaluate", help="оценить сохранённые метки: силуэт и отчёт с t-SNE",
         description="Независимая оценка без обучения: выполненный notebook и самодостаточный HTML.",
@@ -254,6 +281,13 @@ def main(argv: list[str] | None = None) -> None:
         args.svd_n_components is not None or args.svd_n_iter is not None
     ):
         parser.error("--svd-n-components и --svd-n-iter требуют --model svd")
+    if args.command == "benchmark-ranking":
+        names = [parse_model_spec(spec).name for spec in args.model]
+        if len(set(names)) != len(names):
+            parser.error("повторяются канонические имена моделей")
+        names = [Path(os.path.abspath(directory)).name for directory in args.dataset]
+        if len(set(names)) != len(names):
+            parser.error("повторяются basename датасетов")
     try:
         if args.command == "prepare":
             result = prepare_data(
@@ -303,6 +337,13 @@ def main(argv: list[str] | None = None) -> None:
             ranking_report = report_ranking(
                 args.dataset_dir, args.model_dir, args.output_dir, split=args.split, k=args.k,
             )
+        elif args.command == "benchmark-ranking":
+            benchmark_runs = run_ranking_benchmark(
+                args.dataset, args.output, models=args.model, k=args.k,
+                save_model=not args.no_save_model,
+            )
+        elif args.command == "benchmark-ranking-report":
+            comparison = report_ranking_benchmark(args.root, args.output)
         else:
             thresholds = DriftThresholds(
                 price=args.price_threshold, category=args.category_threshold,
@@ -320,6 +361,16 @@ def main(argv: list[str] | None = None) -> None:
         # CLI boundary: data, kernel, rendering and filesystem errors all exit 1.
         stage = "подготовки" if args.command == "prepare" else args.command
         parser.exit(1, f"Ошибка {stage}: {exc}\n")
+
+    if args.command == "benchmark-ranking":
+        for path in benchmark_runs:
+            print(f"Run: {path}")
+        return
+
+    if args.command == "benchmark-ranking-report":
+        print(f"HTML: {comparison.html_path}")
+        print(f"CSV: {comparison.csv_path}")
+        return
 
     if args.command == "rank":
         print(f"Модель: {ranking_model.model_path}")

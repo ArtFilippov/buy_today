@@ -1,0 +1,76 @@
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+import pytest
+
+from prak.cli import main
+from prak.ranking import read_latest_benchmark_runs
+
+
+def run_cli(*args, cwd):
+    return subprocess.run([str(Path(sys.executable).with_name("prak")), *args],
+                          cwd=cwd, text=True, capture_output=True, check=False)
+
+
+def test_benchmark_and_report_commands_from_another_cwd(ranking_snapshot, tmp_path):
+    second = tmp_path / "metric b"
+    shutil.copytree(ranking_snapshot, second)
+    result = run_cli(
+        "benchmark-ranking", "--output", "benchmark results", "--dataset", ranking_snapshot.name,
+        "--dataset", second.name, "--model", "random", "--model", "svd --n-components 2 --random-state 73",
+        "--k", "3", "--no-save-model", cwd=tmp_path,
+    )
+    assert result.returncode == 0, result.stderr
+    selected = read_latest_benchmark_runs(tmp_path / "benchmark results")
+    assert len(selected) == 2 and all(str(path) in result.stdout for path, _ in selected)
+    assert selected[1][1]["model"]["parameters"] == {"n_components": 2, "n_iter": 7, "random_state": 73}
+    assert not list((tmp_path / "benchmark results").rglob("model.joblib"))
+    shutil.rmtree(ranking_snapshot)
+    shutil.rmtree(second)
+    report = run_cli("benchmark-ranking-report", "benchmark results", "--output", "reports/compare ranking.html", cwd=tmp_path)
+    assert report.returncode == 0, report.stderr
+    for suffix in ("html", "csv"):
+        path = tmp_path / "reports" / f"compare ranking.{suffix}"
+        assert path.is_file() and str(path) in report.stdout
+
+
+def test_cli_defaults_save_model_and_k(ranking_snapshot, tmp_path):
+    result = run_cli("benchmark-ranking", "--output", "out", "--dataset", ranking_snapshot.name,
+                     "--model", "random", cwd=tmp_path)
+    assert result.returncode == 0, result.stderr
+    selected = read_latest_benchmark_runs(tmp_path / "out")
+    assert selected[0][1]["k"] == 10 and selected[0][1]["save_model"]
+    assert list(selected[0][0].rglob("model.joblib"))
+
+
+@pytest.mark.parametrize("extra", [
+    ["--model", "unknown"], ["--model", "random --unknown 1"], ["--model", "svd --n-iter 0"],
+    ["--model", "random", "--k", "0"], ["--model", "random", "--model", "random --random-state 42"],
+    ["--model", "random", "--dataset", "other/missing"],
+])
+def test_bad_benchmark_syntax_exits_two(extra, tmp_path, capsys):
+    with pytest.raises(SystemExit) as error:
+        main(["benchmark-ranking", "--output", str(tmp_path / "out"), "--dataset", "missing", *extra])
+    assert error.value.code == 2
+    assert capsys.readouterr().err
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("command,args", [
+    ("benchmark-ranking", ["--dataset", "missing", "--model", "random", "--output", "out"]),
+    ("benchmark-ranking-report", ["missing", "--output", "report.html"]),
+])
+def test_execution_failures_exit_one(command, args, tmp_path):
+    result = run_cli(command, *args, cwd=tmp_path)
+    assert result.returncode == 1
+    assert f"Ошибка {command}:" in result.stderr
+    assert not (tmp_path / "out").exists() and not (tmp_path / "report.html").exists()
+
+
+@pytest.mark.parametrize("command", ["benchmark-ranking", "benchmark-ranking-report"])
+def test_command_help(command, tmp_path):
+    result = run_cli(command, "--help", cwd=tmp_path)
+    assert result.returncode == 0
+    assert "--output" in result.stdout

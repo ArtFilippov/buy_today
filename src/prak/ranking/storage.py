@@ -76,6 +76,25 @@ def _publish(output_dir):
         staging.rename(output_dir)
 
 
+def _write_fitted_ranker(model, directory, *, inputs, interactions):
+    """Write the shared model format into an existing, unpublished directory."""
+    manifest = {
+        "format_version": 1, "inputs": inputs,
+        "n_users": int(interactions.user_id.nunique()),
+        "user_ids_sha256": _users_digest(interactions),
+        "versions": {"numpy": np.__version__, "scikit_learn": sklearn.__version__},
+        "model": {
+            "file": "model.joblib",
+            "class": f"{type(model).__module__}.{type(model).__qualname__}",
+            "parameters": model.get_params(deep=False),
+        },
+    }
+    joblib.dump(model, directory / "model.joblib")
+    manifest["model"]["sha256"] = _digest(directory / "model.joblib")
+    _write_json(directory / "manifest.json", manifest)
+    return manifest
+
+
 def train_ranker(
     dataset_dir: Path | str, output_dir: Path | str, *, ranker=None,
 ) -> TrainingPaths:
@@ -93,21 +112,8 @@ def train_ranker(
         "catalog": _source(dataset_dir / "catalog.csv", len(data.catalog)),
     }
     model = clone(RandomRanker() if ranker is None else ranker).fit(data)
-    manifest = {
-        "format_version": 1, "inputs": inputs,
-        "n_users": int(data.interactions.user_id.nunique()),
-        "user_ids_sha256": _users_digest(data.interactions),
-        "versions": {"numpy": np.__version__, "scikit_learn": sklearn.__version__},
-        "model": {
-            "file": "model.joblib",
-            "class": f"{type(model).__module__}.{type(model).__qualname__}",
-            "parameters": model.get_params(deep=False),
-        },
-    }
     with _publish(output_dir) as staging:
-        joblib.dump(model, staging / "model.joblib")
-        manifest["model"]["sha256"] = _digest(staging / "model.joblib")
-        _write_json(staging / "manifest.json", manifest)
+        _write_fitted_ranker(model, staging, inputs=inputs, interactions=data.interactions)
     return TrainingPaths(output_dir / "model.joblib", output_dir / "manifest.json")
 
 
