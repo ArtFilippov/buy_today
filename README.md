@@ -1,40 +1,27 @@
 # Рекомендательная система списка покупок
 
-Учебный Python-конвейер: подготовка потока данных Olist, контроль качества,
-обучение моделей по батчам, рекомендации и история метрик. Этапы реализованы
-на pandas, NumPy и scikit-learn, без специализированных MLOps-платформ.
+Используется датасет [Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
+с реальными позициями заказов. ML-задача — рекомендательная система списка покупок:
+по синтетическим пользовательским историям ранжировать товары и выдавать рекомендации.
 
-Поток состоит из реальных позиций заказов [Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce).
-Для оценки рекомендаций из них генерируются **синтетические пользовательские истории**.
-Временная кластеризация обслуживает модельный этап; ранжировщик — Random или SVD,
-один на прогон. Метрики описывают модельные истории, а не полезность для реальных покупателей.
-
-Основной сценарий сдачи — **MVP + локальный Docker**. Он позволяет обрабатывать
-батчи отдельными запусками и открывать результаты из примонтированной папки.
-Локальный Docker предусмотрен как альтернатива GitHub Actions в задании 2.
+Предусмотрен только Docker, без GitHub Actions.
 
 ## Docker: сборка и запуск
 
 Нужен Docker Desktop с запущенным **Linux engine**. Команды ниже — для
 Windows PowerShell, из корня репозитория. Python и uv на Windows не требуются.
-Для сборки нужен Интернет: исходные CSV Olist скачиваются в образ автоматически.
+Сборка выполняется одной командой; нужен Интернет для автоматической загрузки CSV Olist:
 
 ```powershell
-docker version
 docker build -t prak:local .
-if ($LASTEXITCODE -ne 0) { throw 'Image build failed' }
-docker run --rm --network none prak:local --help
 ```
 
-Выберите папку результатов и подключайте её к `/workspace` при каждом вызове:
+Замените `<workdir>` на абсолютный путь к папке результатов, например
+`C:\prak-workspace`. Используйте одну и ту же папку во всех командах;
+Docker создаст её при первом запуске:
 
 ```powershell
-$WorkDir = Join-Path $env:USERPROFILE 'prak-workspace'
-New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
-
-docker run --rm --network none --mount "type=bind,source=$WorkDir,target=/workspace" `
-    prak:local init --verbose
-if ($LASTEXITCODE -ne 0) { throw 'init failed; see workspace logs' }
+docker run --rm -v "<workdir>:/workspace" prak:local init --verbose
 ```
 
 `init` выгружает исходные CSV, подготавливает весь поток, обрабатывает **первый
@@ -43,9 +30,7 @@ if ($LASTEXITCODE -ne 0) { throw 'init failed; see workspace logs' }
 старые `logs/` сохраняются. Для продолжения используйте `update`:
 
 ```powershell
-docker run --rm --network none --mount "type=bind,source=$WorkDir,target=/workspace" `
-    prak:local update --verbose
-if ($LASTEXITCODE -ne 0) { throw 'update failed; see workspace logs' }
+docker run --rm -v "<workdir>:/workspace" prak:local update --verbose
 ```
 
 Каждый `update` обрабатывает **один следующий батч** и обновляет сводку.
@@ -55,78 +40,73 @@ if ($LASTEXITCODE -ne 0) { throw 'update failed; see workspace logs' }
 Рекомендации из явно выбранной модели первого шага:
 
 ```powershell
-docker run --rm --network none --mount "type=bind,source=$WorkDir,target=/workspace" `
-    prak:local inference --model-dir run/steps/step_000/ranking `
-    --user-id user_000000_000000 --k 10 --verbose
-if ($LASTEXITCODE -ne 0) { throw 'inference failed; see workspace logs' }
+docker run --rm -v "<workdir>:/workspace" prak:local inference --model-dir run/steps/step_000/ranking --user-id user_000000_000000 --k 10 --verbose
 ```
 
 `user_id` — известный модели синтетический пользователь, не `customer_unique_id`
 из Olist. Для другого шага укажите его каталог `ranking/` явно.
-Все три команды после сборки работают без сети.
+Все три команды после сборки не требуют сети.
 Параметры, логи и поведение при ошибках: [справка Docker](docs/docker.md).
-
-## Минимальный локальный запуск
-
-Нужны Python **3.13+**, [uv](https://docs.astral.sh/uv/) и исходные CSV Olist,
-распакованные в `dataset/`. `uv sync` устанавливает окружение, но не скачивает
-данные. [Нужные файлы и правила подготовки](docs/data.md#исходные-файлы).
-Команды ниже — для Bash из корня репозитория; каталог нового прогона должен отсутствовать.
-
-```bash
-uv sync --frozen
-uv run prak prepare --raw-dir dataset --output-dir data/olist-stream
-
-# Новый прогон: первый батч, ранжировщик SVD
-uv run prak run --data-dir data/olist-stream \
-  --run-dir models/olist-stream/runs/example --model svd
-
-# Продолжение: все оставшиеся батчи (без --all — только один)
-uv run prak run --run-dir models/olist-stream/runs/example --all
-uv run prak summary --run-dir models/olist-stream/runs/example
-
-uv run prak inference \
-  --model-dir models/olist-stream/runs/example/steps/step_000/ranking \
-  --user-id user_000000_000000 --k 10 \
-  --output models/olist-stream/runs/example/recommendations.csv
-```
-
-Для повторного эксперимента выберите новый `--run-dir`.
-Локальная `run` выполняет полный цикл батча, а `summary` вызывается отдельно.
-Локальные `init` / `update` управляют только эталоном и EDA/DEDA; контейнерные
-одноимённые команды выполняют полный цикл. [Справка локального CLI](docs/local-cli.md).
 
 ## Где появятся результаты
 
-Пути ниже создаются после выполнения команд. Для Docker база — `$WorkDir`,
-для локального прогона — указанный `--run-dir`.
+Результаты создаются после выполнения команд. Все пути ниже указаны относительно
+папки `<workdir>`.
 
-| Результат | Docker | Локальный прогон |
-| --- | --- | --- |
-| Главная сводка | `run/summary/summary.html` | `summary/summary.html` |
-| Сводные данные | `run/summary/summary.{csv,json}` | `summary/summary.{csv,json}` |
-| Отчёты EDA, DEDA, кластеризации | `run/steps/step_NNN/` | `steps/step_NNN/` |
-| Модель и метрики validation/test | `run/steps/step_NNN/ranking/` | `steps/step_NNN/ranking/` |
-| Рекомендации | `recommendations/*.csv` | Путь из `inference --output` |
-| Текстовые логи вызовов | `logs/*.log` | Вывод CLI; длительности в манифестах шагов |
+| Результат | Путь |
+| --- | --- |
+| Главная сводка | `run/summary/summary.html` |
+| Сводные данные | `run/summary/summary.{csv,json}` |
+| Отчёты EDA, DEDA, кластеризации | `run/steps/step_NNN/` |
+| Модель и метрики validation/test | `run/steps/step_NNN/ranking/` |
+| Рекомендации | `recommendations/*.csv` |
+| Текстовые логи вызовов | `logs/*.log` |
 
 Начните просмотр с `summary.html`: там динамика качества и ссылки на отчёты шагов.
 EDA/DEDA и кластеризация сохраняют выполненный `report.ipynb`, самодостаточный
 `report.html` и `metrics.json`. Рекомендации — CSV `user_id,rank,product_id`.
 Сводка Docker строится автоматически после `init` / `update`.
 
-## Остальные команды
+## Авто-EDA и DEDA
 
-Синтаксис: `uv run prak <команда> --help`.
+EDA — **Exploratory Data Analysis**, разведочный анализ данных. `init` строит EDA
+первого батча: проверяет схему 35 колонок, типы и даты, непустоту данных, отсутствие
+пропусков, уникальность `(order_id, order_item_id)`, неубывание времени покупки
+и конечную положительную цену. Отчёт содержит графики цен, категорий и штатов покупателей.
 
-| Команды | Назначение и подробности |
-| --- | --- |
-| `eda`, `deda` | [Отдельные отчёты качества и дрейфа](docs/local-cli.md#eda-и-эталон) |
-| `init`, `update` | [Создание и пополнение эталона](docs/local-cli.md#eda-и-эталон) |
-| `cluster`, `evaluate` | [Временная кластеризация и независимая оценка](docs/local-cli.md#кластеризация) |
-| `generate` | [Накопление модельных историй](docs/local-cli.md#генерация-историй) |
-| `rank`, `evaluate-ranking` | [Обучение и оценка ранжировщика](docs/local-cli.md#ранжирование) |
-| `benchmark-ranking`, `benchmark-ranking-report` | [Сравнение моделей на готовых датасетах](docs/local-cli.md#сравнение-моделей) |
+В проекте DEDA (**Data Drift EDA**) — сравнительный анализ для обнаружения
+**дрейфа данных**, то есть изменения распределений признаков. Каждый `update`
+сравнивает новый батч с накопленным эталоном до его пополнения, затем добавляет
+батч и строит EDA обновлённого эталона. Метрики дрейфа:
+
+- **KS D — Kolmogorov–Smirnov D statistic**, статистика D Колмогорова–Смирнова
+  для `price`: максимальный разрыв эмпирических функций распределения цен.
+
+$$
+D = \sup_x \left|F_{\mathrm{batch}}(x) - F_{\mathrm{reference}}(x)\right|
+$$
+
+- **TVD — Total Variation Distance**, расстояние полной вариации, отдельно
+  для `product_category_name` и `customer_state`: половина суммы абсолютных
+  различий долей категорий или штатов.
+
+$$
+\mathrm{TVD} = \frac{1}{2} \sum_v \left|p_{\mathrm{batch}}(v) - p_{\mathrm{reference}}(v)\right|
+$$
+
+Здесь `F(x)` — доля позиций заказа с ценой не выше `x`, `p(v)` — доля позиций
+с категорией или штатом `v`; учитываются все значения обоих наборов, включая новые
+и исчезнувшие. Обе метрики лежат в `[0, 1]`: `0` означает совпадение распределений.
+По умолчанию дрейф фиксируется, если хотя бы одна из трёх метрик **≥ 0.10**.
+Это порог расстояния, не p-value; дрейф не блокирует `update`.
+
+## Логирование
+
+Каждый запуск `init`, `update` и `inference` сохраняет отдельный UTF-8 лог
+в `<workdir>/logs/`. В нём — время, начало и завершение стадий, их длительности,
+номер батча, его фиксация (`batch_committed`), итог команды (`command_succeeded`
+или `command_failed`) и traceback при ошибке. `--verbose` дополнительно выводит
+стадии в консоль. Повторный `init` сохраняет старые логи.
 
 ## Задания и состояние реализации
 
@@ -152,6 +132,5 @@ EDA/DEDA и кластеризация сохраняют выполненный
 ## Документация
 
 - [Docker](docs/docker.md) — образ, рабочая папка, параметры, логи и проверки.
-- [Локальный CLI](docs/local-cli.md) — команды, настройки и сравнение моделей.
 - [Данные](docs/data.md) — источник, подготовка, схема и все 35 признаков.
 - [Конвейер](docs/pipeline.md) — этапы, контракты, метрики и состояние прогона.

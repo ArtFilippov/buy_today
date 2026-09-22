@@ -5,14 +5,11 @@
 ## Образ и сборка
 
 Основной сценарий — Windows PowerShell и Docker Desktop с Linux engine.
-Команды сборки запускаются из корня репозитория; рабочая папка результатов
-может находиться отдельно. Python и uv на хосте не нужны.
+Python и uv на хосте не нужны. Рабочая папка результатов может находиться отдельно.
+Сборка выполняется одной командой из корня репозитория; нужен Интернет для загрузки Olist:
 
 ```powershell
-docker version
 docker build -t prak:local .
-if ($LASTEXITCODE -ne 0) { throw 'Image build failed' }
-docker run --rm --network none prak:local --help
 ```
 
 [Dockerfile](../Dockerfile) использует Python 3.13 slim, uv 0.12.6 и
@@ -26,13 +23,7 @@ notebook входят в runtime; служебные файлы ядра и ке
 сборки не нужен. Версия датасета и ожидаемые контрольные суммы не закреплены;
 исследовательский `olist_prepared_dataset.csv` в образ не входит.
 
-Для повторного скачивания вместо использования кеша:
-
-```powershell
-docker buildx build --load --no-cache-filter olist-data -t prak:local .
-```
-
-После сборки все команды работают без сети. Образ содержит код, окружение и
+После сборки все команды не требуют сети. Образ содержит код, окружение и
 исходные CSV; подключённая папка — состояние эксперимента и его результаты.
 
 ## Рабочая папка и команды
@@ -41,15 +32,15 @@ docker buildx build --load --no-cache-filter olist-data -t prak:local .
 $WorkDir = Join-Path $env:USERPROFILE 'prak-workspace'
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
 
-docker run --rm --network none --mount "type=bind,source=$WorkDir,target=/workspace" `
+docker run --rm --mount "type=bind,source=$WorkDir,target=/workspace" `
     prak:local init --verbose
 if ($LASTEXITCODE -ne 0) { throw 'init failed; see workspace logs' }
 
-docker run --rm --network none --mount "type=bind,source=$WorkDir,target=/workspace" `
+docker run --rm --mount "type=bind,source=$WorkDir,target=/workspace" `
     prak:local update --verbose
 if ($LASTEXITCODE -ne 0) { throw 'update failed; see workspace logs' }
 
-docker run --rm --network none --mount "type=bind,source=$WorkDir,target=/workspace" `
+docker run --rm --mount "type=bind,source=$WorkDir,target=/workspace" `
     prak:local inference --model-dir run/steps/step_000/ranking `
     --user-id user_000000_000000 --k 10 --verbose
 if ($LASTEXITCODE -ne 0) { throw 'inference failed; see workspace logs' }
