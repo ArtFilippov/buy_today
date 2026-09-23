@@ -43,6 +43,11 @@ Important reviewed distinctions:
   directly.
 - `pipeline_config.py` imports pure drift/sampling parameters rather than the
   EDA report facade or history-generation implementation.
+- `history_quality` is an Infrastructure module: it restores categories by source
+  row key, computes descriptive concentration metrics and an IID baseline, and
+  atomically publishes a standalone JSON report. It uses the public generation
+  snapshot reader and EDA's explicitly exposed TVD/checks; its result TypedDicts
+  live in `history_quality.domain`. Only the CLI composes this report command.
 - Generic records are defined without NumPy/Pandas imports. Adapters specialize
   them with actual dataframe/array types. Existing constructor exports are kept;
   public records used in runtime instance checks remain classes. Generic defaults

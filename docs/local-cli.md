@@ -184,6 +184,26 @@ uv run buy_today generate --batch data/olist-stream/batches/batch_001.csv \
 `train.csv`, `validation.csv`, `test.csv`, `catalog.csv` и `generator/` с
 происхождением событий. [Правила генерации и формат снимка](pipeline.md#модельные-истории).
 
+## Качество историй
+
+```bash
+uv run buy_today history-quality \
+  --dataset-dir data/olist-stream/histories/example/step_000 \
+  --reference data/olist-stream/batches/batch_000.csv \
+  --output-dir data/olist-stream/history-quality/example/step_000 \
+  --iid-repeats 100 --random-state 42
+```
+
+Три пути обязательны. `--reference` — один рабочий CSV с точной совокупностью
+исходных батчей этого снимка; пропущенные и лишние ключи — ошибка. Для накопленного
+снимка заранее объедините его батчи. Выходной каталог должен быть новым и вне
+snapshot. `--iid-repeats` — положительное целое (100), seed — `[0, 2**32 - 1]` (42).
+
+В `metrics.json` сохраняются общие метрики по **train + validation + test**:
+TVD категорий, концентрация главной категории, inverse Simpson, привязка к anchor
+и сравнение с IID. Это report-only, без критериев допуска генерации.
+[Формулы, валидация, JSON и API](history-quality.md).
+
 ## Ранжирование
 
 Обучение и независимая оценка на снимке из предыдущего раздела:

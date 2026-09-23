@@ -105,6 +105,16 @@ layer = "Domain"
 depends_on = []
 
 [[modules]]
+path = "buy_today.history_quality"
+layer = "Infrastructure"
+depends_on = ["buy_today.auto_eda", "buy_today.generation", "buy_today.generation.parameters", "buy_today.history_quality.domain", "buy_today.schema"]
+
+[[modules]]
+path = "buy_today.history_quality.domain"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
 path = "buy_today.ranking"
 layer = "Bootstrap"
 depends_on = ["buy_today.ranking.data", "buy_today.ranking.evaluation", "buy_today.ranking.random", "buy_today.ranking.svd", "buy_today.ranking.storage", "buy_today.ranking.inference", "buy_today.ranking.benchmark", "buy_today.ranking.benchmark_report"]
@@ -277,7 +287,7 @@ depends_on = ["buy_today.auto_eda.domain", "buy_today.cli_values"]
 [[modules]]
 path = "buy_today.cli"
 layer = "Bootstrap"
-depends_on = ["buy_today.auto_eda", "buy_today.cli_arguments", "buy_today.cli_values", "buy_today.clustering.distances", "buy_today.clustering.models.temporal", "buy_today.clustering.report", "buy_today.clustering.training", "buy_today.generation", "buy_today.preparation", "buy_today.pipeline", "buy_today.ranking", "buy_today.summary", "buy_today.update"]
+depends_on = ["buy_today.auto_eda", "buy_today.cli_arguments", "buy_today.cli_values", "buy_today.clustering.distances", "buy_today.clustering.models.temporal", "buy_today.clustering.report", "buy_today.clustering.training", "buy_today.generation", "buy_today.history_quality", "buy_today.preparation", "buy_today.pipeline", "buy_today.ranking", "buy_today.summary", "buy_today.update"]
 
 [[modules]]
 path = "buy_today.container_cli"
@@ -291,7 +301,7 @@ expose = []
 [[interfaces]]
 from = ["^buy_today\\.auto_eda$"]
 # dataset_summary is also used by the generated clustering notebook.
-expose = ["DriftThresholds$", "report_dataset$", "report_drift$", "checks\\.check_(dataset|combination)$", "notebook\\.(ReportPaths|execute_report|write_metrics)$", "cells\\.(code|markdown|setup_code)$", "eda\\.dataset_summary$"]
+expose = ["DriftThresholds$", "report_dataset$", "report_drift$", "checks\\.check_(dataset|combination)$", "notebook\\.(ReportPaths|execute_report|write_metrics)$", "cells\\.(code|markdown|setup_code)$", "eda\\.dataset_summary$", "drift\\.total_variation_distance$"]
 
 [[interfaces]]
 from = ["^buy_today\\.auto_eda\\.domain$"]
@@ -373,6 +383,14 @@ expose = ["GeneratedHistories$", "GenerationPaths$", "generate_histories$", "gen
 [[interfaces]]
 from = ["^buy_today\\.generation\\.parameters$"]
 expose = ["check_integer$", "check_parameters$", "SPLITS$", "DEFAULT_SPLIT_SIZES$"]
+
+[[interfaces]]
+from = ["^buy_today\\.history_quality$"]
+expose = ["HistoryQuality$", "evaluate_history_quality$", "report_history_quality$"]
+
+[[interfaces]]
+from = ["^buy_today\\.history_quality\\.domain$"]
+expose = ["HistoryQuality$", "IIDBaseline$"]
 
 [[interfaces]]
 from = ["^buy_today\\.ranking$"]

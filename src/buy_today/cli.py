@@ -24,6 +24,7 @@ from buy_today.clustering.models.temporal import train_temporal
 from buy_today.clustering.report import report_clustering
 from buy_today.clustering.training import train_clustering
 from buy_today.generation import generate_dataset
+from buy_today.history_quality import report_history_quality
 from buy_today.preparation import prepare_data
 from buy_today.pipeline import PipelineConfig, read_pipeline_config, run_pipeline
 from buy_today.ranking import (
@@ -204,6 +205,15 @@ def _generate(args: argparse.Namespace, errors: _CommandErrors) -> list[str]:
     ]
 
 
+def _history_quality(args: argparse.Namespace, errors: _CommandErrors) -> list[str]:
+    with errors:
+        metrics = report_history_quality(
+            args.dataset_dir, args.reference, args.output_dir,
+            iid_repeats=args.iid_repeats, random_state=args.random_state,
+        )
+    return [f"Метрики: {metrics}"]
+
+
 def _rank(args: argparse.Namespace, errors: _CommandErrors) -> list[str]:
     with errors:
         if args.model == SVD:
@@ -282,6 +292,7 @@ _HANDLERS: dict[str, Callable[[argparse.Namespace, _CommandErrors], list[str]]] 
     Command.CLUSTER: _cluster,
     Command.EVALUATE: _evaluate,
     Command.GENERATE: _generate,
+    Command.HISTORY_QUALITY: _history_quality,
     Command.RANK: _rank,
     Command.EVALUATE_RANKING: _evaluate_ranking,
     Command.BENCHMARK: _benchmark,

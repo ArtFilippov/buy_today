@@ -3,6 +3,7 @@
 import argparse
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any, override
 
 from buy_today.auto_eda.domain import DriftThresholds
 from buy_today.cli_values import (
@@ -16,6 +17,17 @@ from buy_today.cli_values import (
 
 
 type ParserFactory = Callable[[str, str, str | None], argparse.ArgumentParser]
+
+
+class _SingleReference(argparse.Action):
+    @override
+    def __call__(
+        self, parser: argparse.ArgumentParser, namespace: argparse.Namespace,
+        values: Any, option_string: str | None = None,
+    ) -> None:
+        if getattr(namespace, self.dest, None) is not None:
+            parser.error(f"{option_string} принимает один CSV и не может повторяться")
+        setattr(namespace, self.dest, values)
 
 
 def command_factory(parser: argparse.ArgumentParser) -> ParserFactory:
@@ -179,6 +191,21 @@ def _generate(parser: argparse.ArgumentParser) -> None:
     _ = parser.add_argument("--random-state", type=random_state, default=42)
 
 
+def _history_quality(parser: argparse.ArgumentParser) -> None:
+    _ = parser.add_argument(
+        "--dataset-dir", type=Path, required=True, help="готовый снимок с generator/"
+    )
+    _ = parser.add_argument(
+        "--reference", type=Path, action=_SingleReference, required=True,
+        help="один CSV всех исходных батчей снимка",
+    )
+    _ = parser.add_argument(
+        "--output-dir", type=Path, required=True, help="новый каталог отчёта вне снимка"
+    )
+    _ = parser.add_argument("--iid-repeats", type=positive_int, default=100)
+    _ = parser.add_argument("--random-state", type=random_state, default=42)
+
+
 def _rank(parser: argparse.ArgumentParser) -> None:
     _ = parser.add_argument(
         "--dataset-dir", type=Path, required=True, help="снимок модельных историй"
@@ -310,6 +337,12 @@ _COMMANDS: tuple[
         "создать и накопить модельные пользовательские истории",
         "Новые истории из нового батча и готового расстояния; прежние истории сохраняются.",
         _generate,
+    ),
+    (
+        Command.HISTORY_QUALITY,
+        "оценить частоты и концентрацию категорий синтетических историй",
+        "Общий отчёт по train + validation + test с IID baseline; метрики без порогов допуска.",
+        _history_quality,
     ),
     (
         Command.RANK,

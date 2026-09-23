@@ -192,6 +192,14 @@ Interface = ["interfaces", "interface"]
 Bootstrap = ["bootstrap", "composition"]
 
 [[tool.clean-arch.layers]]
+module = "buy_today.history_quality.domain"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.history_quality"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
 module = "buy_today.clustering.models.temporal_estimator"
 name = "Infrastructure"
 

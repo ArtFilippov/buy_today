@@ -21,6 +21,7 @@ class Command(StrEnum):
     UPDATE = "update"
     CLUSTER = "cluster"
     GENERATE = "generate"
+    HISTORY_QUALITY = "history-quality"
     RANK = "rank"
     EVALUATE_RANKING = "evaluate-ranking"
     BENCHMARK = "benchmark-ranking"
