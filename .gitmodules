@@ -1,0 +1,4 @@
+[submodule "eryx"]
+	path = eryx
+	url = git@github.com:ArtFilippov/eryx.git
+	branch = main

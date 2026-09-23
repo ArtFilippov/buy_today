@@ -1,33 +1,49 @@
 """Contents of the single-dataset report; calculations run in its notebook."""
 
 from pathlib import Path
-from textwrap import dedent
-
-import nbformat
 import pandas as pd
 
+from buy_today.auto_eda.cells import DATASET_SCOPE, code, markdown, setup_code
 from buy_today.auto_eda.notebook import ReportPaths, execute_report
 
 
 def dataset_summary(frame: pd.DataFrame) -> pd.DataFrame:
     times = frame["order_purchase_timestamp"]
-    return pd.DataFrame({
-        "Показатель": [
-            "Позиции заказа", "Колонки", "Уникальные заказы", "Уникальные покупатели",
-            "Уникальные товары", "Начало периода покупок", "Конец периода покупок",
-        ],
-        "Значение": [
-            str(len(frame)), str(len(frame.columns)), str(frame["order_id"].nunique()),
-            str(frame["customer_unique_id"].nunique()), str(frame["product_id"].nunique()),
-            str(times.min()), str(times.max()),
-        ],
-    })
+    return pd.DataFrame(
+        {
+            "Показатель": [
+                "Позиции заказа",
+                "Колонки",
+                "Уникальные заказы",
+                "Уникальные покупатели",
+                "Уникальные товары",
+                "Начало периода покупок",
+                "Конец периода покупок",
+            ],
+            "Значение": [
+                str(len(frame)),
+                str(len(frame.columns)),
+                str(frame["order_id"].nunique()),
+                str(frame["customer_unique_id"].nunique()),
+                str(frame["product_id"].nunique()),
+                str(times.min()),
+                str(times.max()),
+            ],
+        }
+    )
 
 
 def dataset_conclusion(frame: pd.DataFrame) -> str:
-    """Data-dependent, descriptive conclusion (no drift decision for one input)."""
+    """Data-dependent, descriptive conclusion (no drift decision for one input).
+
+    Args:
+        frame (pd.DataFrame): Validated dataset to summarize.
+
+    Returns:
+        str: Dataset size, price quantiles and category and state coverage.
+    """
     categories = frame["product_category_name"].value_counts()
-    top = categories.sort_index().sort_values(ascending=False, kind="stable")
+    top = pd.Series.sort_index(categories).sort_values(ascending=False, kind="stable")
     return (
         f"Все обязательные проверки пройдены. Датасет: {len(frame):,} позиций × "
         f"{len(frame.columns)} колонок.\n"
@@ -42,31 +58,27 @@ def dataset_conclusion(frame: pd.DataFrame) -> str:
 
 
 def report_dataset(dataset_path: Path | str, output_dir: Path | str) -> ReportPaths:
-    """Create notebook, HTML and metrics; raise on invalid data or execution failure."""
+    """Create notebook, HTML and metrics; raise on invalid data or execution failure.
+
+    Args:
+        dataset_path (Path | str): Input dataset CSV.
+        output_dir (Path | str): Directory for executed report artifacts.
+
+    Returns:
+        ReportPaths: Paths of the executed notebook and HTML report.
+    """
     dataset_path = Path(dataset_path).resolve()
-    markdown = nbformat.v4.new_markdown_cell
-
-    def code(source: str) -> nbformat.NotebookNode:
-        return nbformat.v4.new_code_cell(dedent(source).strip())
-
     cells = [
-        markdown("""# EDA · один датасет Olist
+        markdown(
+            """# EDA · один датасет Olist
 
 ## Входные данные
 Единица наблюдения — **позиция заказа**, ключ — `(order_id, order_item_id)`.
 Анализируется весь переданный CSV без семплирования и импутации.
-Подготовленный Olist — ретроспективная выборка доставленных покупок товаров
-с единственным продавцом, после удаления строк с любым пропуском.
-Распределения описывают сохранённые покупки, а не весь рынок или каталог.
-"""),
-        code(f"""
-            from pathlib import Path
-            import hashlib
-            import sys
-            import pandas as pd
-            import matplotlib.pyplot as plt
-            from IPython.display import HTML, display
-            from buy_today.schema import read_dataset
+"""
+            + DATASET_SCOPE
+        ),
+        setup_code(f"""
             from buy_today.auto_eda.checks import check_dataset
             from buy_today.auto_eda.eda import dataset_summary, dataset_conclusion
             from buy_today.auto_eda.notebook import write_metrics
@@ -98,9 +110,18 @@ def report_dataset(dataset_path: Path | str, output_dir: Path | str) -> ReportPa
 Числовые признаки: число наблюдений, среднее, стандартное отклонение,
 минимум, квартили и максимум. `order_item_id` — номер позиции, а не количество товара.
 """),
-        code("show_table(frame.select_dtypes(include='number').describe().T.rename_axis('Признак').reset_index())"),
-        markdown("Строковые признаки: число наблюдений, число уникальных значений, мода и её частота."),
-        code("show_table(frame.describe(include=['string']).T.rename_axis('Признак').reset_index())"),
+        code("""
+            show_table(
+                frame.select_dtypes(include='number').describe().T
+                .rename_axis('Признак').reset_index()
+            )
+        """),
+        markdown(
+            "Строковые признаки: число наблюдений, число уникальных значений, мода и её частота."
+        ),
+        code(
+            "show_table(frame.describe(include=['string']).T.rename_axis('Признак').reset_index())"
+        ),
         markdown("""## Три распределения
 ### 1. Цена (`price`)
 30 интервалов с равными шагами в логарифме цены; высота столбца — доля всех

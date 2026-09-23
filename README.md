@@ -93,6 +93,37 @@ $$
 
 Каждый запуск `init`, `update` и `inference` сохраняет отдельный лог в `<workdir>/logs/`. В нём — время, начало и завершение стадий, их длительности, номер батча, итог команды (`command_succeeded` или `command_failed`) и traceback при ошибке. `--verbose` дополнительно выводит стадии в консоль.
 
+## Проверки разработки
+
+Для локальных проверок нужны Python 3.13+, `uv` и инициализированный submodule `eryx`:
+
+```bash
+git submodule update --init --recursive
+uv sync --locked --group dev
+uv run --locked --group dev python eryx/check.py
+uv run --locked --group dev pytest -q
+```
+
+Eryx проверяет типизацию, читаемость, документацию и архитектуру исходников и тестов.
+Полный отчёт сохраняется в `.eryx/reports/latest.json`, исходные логи — рядом в
+каталоге отдельного запуска. Границы модулей описаны в
+[`docs/architecture.md`](docs/architecture.md) и `tach.toml`.
+
+Локальные уточнения типов сторонних библиотек и команды их проверки описаны в
+[`typings/README.md`](typings/README.md). JupyterLab входит в dev-окружение.
+После изменения самого анализатора запускайте также его регрессионные тесты:
+
+```bash
+uv run --locked --group dev python -B -m unittest discover -s eryx/tests
+```
+
+## Подбор моделей
+
+Экспериментальный подбор генератора и ранжировщика: [результаты и команды](docs/model-selection.md).
+Для первого батча выбраны `CategoryPriceDistance`, температура `0.1` и SVD256;
+на независимых синтетических test-наборах NDCG@10 ≈ 0.494, Recall@10 ≈ 0.372.
+В отчёте описаны ограничения однокатегорийной генерации и сравнение с baseline.
+
 ## Задания и состояние реализации
 
 Исходные требования: [задание 1 — MVP](docs/assignments/320_MLOps_task_1.pdf),

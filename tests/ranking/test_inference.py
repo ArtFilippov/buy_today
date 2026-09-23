@@ -2,31 +2,46 @@
 
 import csv
 import json
+from typing import Any
 
 import joblib
 import numpy as np
 import pandas as pd
 import pytest
+import fixture_types as ft
 
 from buy_today.ranking import RandomRanker, SVDRanker, train_ranker
 from buy_today.ranking.inference import export_recommendations, recommend
 
 
-def contents(directory):
-    return {str(path.relative_to(directory)): path.read_bytes()
-            for path in directory.rglob("*") if path.is_file()}
+type SavedModel = tuple[ft.Path, RandomRanker | SVDRanker]
+
+
+def contents(directory: ft.Path) -> dict[str, bytes]:
+    return {
+        str(path.relative_to(directory)): path.read_bytes()
+        for path in directory.rglob("*")
+        if path.is_file()
+    }
 
 
 @pytest.fixture(params=["random", "svd"])
-def saved_model(ranking_snapshot, tmp_path, request):
-    ranker = RandomRanker(random_state=17) if request.param == "random" else SVDRanker(n_components=1)
+def saved_model(
+    ranking_snapshot: ft.Path, tmp_path: ft.Path, request: pytest.FixtureRequest
+) -> SavedModel:
+    ranker = (
+        RandomRanker(random_state=17) if request.param == "random" else SVDRanker(n_components=1)
+    )
     model_dir = tmp_path / "saved model"
     paths = train_ranker(ranking_snapshot, model_dir, ranker=ranker)
     return model_dir, joblib.load(paths.model_path)
 
 
 def test_recommend_needs_only_saved_model_and_preserves_inputs(
-    saved_model, ranking_snapshot, tmp_path, monkeypatch,
+    saved_model: SavedModel,
+    ranking_snapshot: ft.Path,
+    tmp_path: ft.Path,
+    monkeypatch: ft.MonkeyPatch,
 ):
     model_dir, model = saved_model
     # The recorded training paths no longer exist, but their contents remain
@@ -34,17 +49,19 @@ def test_recommend_needs_only_saved_model_and_preserves_inputs(
     history = ranking_snapshot.rename(tmp_path / "unavailable history")
     before_history, before_model = contents(history), contents(model_dir)
 
-    def forbidden_fit(*args, **kwargs):
+    def forbidden_fit(*args: object, **kwargs: object) -> None:
         pytest.fail("Inference must never call fit")
 
     monkeypatch.setattr(type(model), "fit", forbidden_fit)
     for user in ("001", "NA"):
         for k in (1, np.int64(12), 5):
-            expected = pd.DataFrame({
-                "user_id": [user] * k,
-                "rank": range(1, k + 1),
-                "product_id": model.predict(user, k),
-            })
+            expected = pd.DataFrame(
+                {
+                    "user_id": [user] * int(k),
+                    "rank": range(1, k + 1),
+                    "product_id": model.predict(user, k),
+                }
+            )
             pd.testing.assert_frame_equal(recommend(model_dir, user, k), expected)
         default = recommend(str(model_dir), user)
         assert list(default.columns) == ["user_id", "rank", "product_id"]
@@ -55,14 +72,26 @@ def test_recommend_needs_only_saved_model_and_preserves_inputs(
     assert contents(model_dir) == before_model
 
 
-@pytest.mark.parametrize("user,k,message", [
-    ("unknown", 1, "Unknown user_id"), ("1", 1, "Unknown user_id"),
-    (None, 1, "Unknown user_id"), (1, 1, "Unknown user_id"),
-    ("001", 0, "k must"), ("001", -1, "k must"), ("001", 13, "k must"),
-    ("001", True, "k must"), ("001", np.bool_(True), "k must"),
-    ("001", 1.5, "k must"), ("001", "3", "k must"), ("001", None, "k must"),
-])
-def test_predict_validation_propagates_without_output(saved_model, tmp_path, user, k, message):
+@pytest.mark.parametrize(
+    "user,k,message",
+    [
+        ("unknown", 1, "Unknown user_id"),
+        ("1", 1, "Unknown user_id"),
+        (None, 1, "Unknown user_id"),
+        (1, 1, "Unknown user_id"),
+        ("001", 0, "k must"),
+        ("001", -1, "k must"),
+        ("001", 13, "k must"),
+        ("001", True, "k must"),
+        ("001", np.bool_(True), "k must"),
+        ("001", 1.5, "k must"),
+        ("001", "3", "k must"),
+        ("001", None, "k must"),
+    ],
+)
+def test_predict_validation_propagates_without_output(
+    saved_model: SavedModel, tmp_path: ft.Path, user: Any, k: object, message: str
+):
     model_dir, _ = saved_model
     output = tmp_path / "new output" / "recommendations.csv"
     with pytest.raises(ValueError, match=message):
@@ -73,7 +102,9 @@ def test_predict_validation_propagates_without_output(saved_model, tmp_path, use
 
 
 @pytest.mark.parametrize("problem", ["checksum", "version"])
-def test_integrity_is_checked_before_deserialization(saved_model, tmp_path, monkeypatch, problem):
+def test_integrity_is_checked_before_deserialization(
+    saved_model: SavedModel, tmp_path: ft.Path, monkeypatch: ft.MonkeyPatch, problem: str
+):
     model_dir, _ = saved_model
     if problem == "checksum":
         with (model_dir / "model.joblib").open("ab") as file:
@@ -87,7 +118,7 @@ def test_integrity_is_checked_before_deserialization(saved_model, tmp_path, monk
         message = "format_version=1"
     before = contents(model_dir)
 
-    def forbidden_load(*args, **kwargs):
+    def forbidden_load(*args: object, **kwargs: object) -> None:
         pytest.fail("Invalid artifacts must be rejected before joblib.load")
 
     monkeypatch.setattr("buy_today.ranking.inference.joblib.load", forbidden_load)
@@ -101,7 +132,9 @@ def test_integrity_is_checked_before_deserialization(saved_model, tmp_path, monk
 
 
 def test_export_writes_exact_ordered_columns_and_preserves_inputs(
-    saved_model, ranking_snapshot, tmp_path,
+    saved_model: SavedModel,
+    ranking_snapshot: ft.Path,
+    tmp_path: ft.Path,
 ):
     model_dir, model = saved_model
     before_history, before_model = contents(ranking_snapshot), contents(model_dir)
@@ -119,7 +152,7 @@ def test_export_writes_exact_ordered_columns_and_preserves_inputs(
     assert contents(model_dir) == before_model
 
 
-def test_export_preserves_utf8_and_csv_quoting(ranking_snapshot, tmp_path):
+def test_export_preserves_utf8_and_csv_quoting(ranking_snapshot: ft.Path, tmp_path: ft.Path):
     user, product = "пользователь", 'товар, "00"'
     for name in ("train.csv", "catalog.csv"):
         path = ranking_snapshot / name
@@ -141,7 +174,9 @@ def test_export_preserves_utf8_and_csv_quoting(ranking_snapshot, tmp_path):
 
 @pytest.mark.parametrize("name", ["model.joblib", "manifest.json", "reports/metrics.json"])
 @pytest.mark.parametrize("alias", ["direct", "symlink", "hardlink", "directory_symlink"])
-def test_export_protects_model_directory_files_and_aliases(saved_model, tmp_path, name, alias):
+def test_export_protects_model_directory_files_and_aliases(
+    saved_model: SavedModel, tmp_path: ft.Path, name: str, alias: str
+):
     model_dir, _ = saved_model
     reports = model_dir / "reports"
     reports.mkdir()
@@ -166,7 +201,7 @@ def test_export_protects_model_directory_files_and_aliases(saved_model, tmp_path
 
 
 @pytest.mark.parametrize("name", [".", "recommendations.csv", "new/recommendations.csv"])
-def test_export_keeps_output_outside_model_directory(saved_model, name):
+def test_export_keeps_output_outside_model_directory(saved_model: SavedModel, name: str):
     model_dir, _ = saved_model
     before = contents(model_dir)
     with pytest.raises(ValueError, match="outside the model directory"):
@@ -175,11 +210,13 @@ def test_export_keeps_output_outside_model_directory(saved_model, name):
 
 
 @pytest.mark.parametrize("stage", ["load", "predict", "write"])
-def test_export_propagates_underlying_errors(saved_model, tmp_path, monkeypatch, stage):
+def test_export_propagates_underlying_errors(
+    saved_model: SavedModel, tmp_path: ft.Path, monkeypatch: ft.MonkeyPatch, stage: str
+):
     model_dir, model = saved_model
     error = OSError(f"{stage} failed")
 
-    def fail(*args, **kwargs):
+    def fail(*args: object, **kwargs: object) -> None:
         raise error
 
     if stage == "load":

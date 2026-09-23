@@ -1,0 +1,24 @@
+{
+  "source": "data/olist-stream/batches/batch_000.csv",
+  "sha256": "3d1fb195d4e74d40ce84a1db50215aedc412874b46b0458c552652df775760c9",
+  "users": 1000,
+  "seeds": [
+    42,
+    137,
+    2026
+  ],
+  "split_sizes": [
+    70,
+    15,
+    15
+  ],
+  "k": 10,
+  "selection_split": "validation",
+  "test_used_for_selection": false,
+  "quality_gates": {
+    "unique_train_median_min": 30,
+    "unique_train_p10_min": 10,
+    "mean_top_product_share_max": 0.2,
+    "category_tvd_max": 0.1
+  }
+}

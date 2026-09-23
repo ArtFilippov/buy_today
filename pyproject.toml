@@ -10,7 +10,6 @@ requires-python = ">=3.13"
 dependencies = [
     "ipykernel>=6.29",
     "joblib>=1.4",
-    "jupyterlab>=4.6.3",
     "matplotlib>=3.10.0",
     "nbclient>=0.10",
     "nbconvert>=7.16",
@@ -26,11 +25,391 @@ dependencies = [
 buy_today = "buy_today.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.3"]
+dev = [
+    "clean-architecture-linter-plugin==1.2.2",
+    "jupyterlab>=4.6.3",
+    "packaging==25.0",
+    "pandas-stubs>=3.0.5.260914",
+    "pydoclint==0.9.1",
+    "pylint==4.0.8",
+    "pyright[nodejs]==1.1.414",
+    "pytest>=8.3",
+    "scikit-learn-stubs>=0.0.3",
+    "scipy-stubs>=1.18.1.1",
+    "tach==0.35.1",
+    "tomlkit==0.13.3",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+
+[tool.uv.dependency-groups.dev]
+requires-python = ">=3.12"
+
+[tool.pylint.main]
+# Load NumPy's real C-extension members for RandomState inference.
+extension-pkg-allow-list = ["numpy.random.mtrand"]
+load-plugins = ["pylint.extensions.bad_builtin", "pylint.extensions.broad_try_clause", "pylint.extensions.check_elif", "pylint.extensions.code_style", "pylint.extensions.comparison_placement", "pylint.extensions.confusing_elif", "pylint.extensions.consider_refactoring_into_while_condition", "pylint.extensions.consider_ternary_expression", "pylint.extensions.dict_init_mutate", "pylint.extensions.docstyle", "pylint.extensions.dunder", "pylint.extensions.empty_comment", "pylint.extensions.eq_without_hash", "pylint.extensions.for_any_all", "pylint.extensions.magic_value", "pylint.extensions.mccabe", "pylint.extensions.no_self_use", "pylint.extensions.overlapping_exceptions", "pylint.extensions.private_import", "pylint.extensions.redefined_loop_name", "pylint.extensions.redefined_variable_type", "pylint.extensions.set_membership", "pylint.extensions.typing", "pylint.extensions.while_used", "clean_architecture_linter"]
+jobs = 1
+persistent = false
+fail-under = 0
+fail-on = ["I"]
+recursive = true
+py-version = "3.13"
+ignore-paths = ["(?:^|[/\\\\])(?:\\.git|\\.venv|venv|__pycache__|\\.mypy_cache|\\.pytest_cache|\\.ruff_cache|\\.tox|\\.nox|\\.eryx|node_modules|build|dist|vendor|vendored|_vendor|generated|_generated|migrations)(?:[/\\\\]|$)"]
+
+[tool.pylint.messages_control]
+enable = ["all"]
+disable = ["missing-module-docstring", "missing-class-docstring", "missing-function-docstring", "reimported", "undefined-variable", "used-before-assignment", "possibly-used-before-assignment"]
+
+[tool.pylint.reports]
+reports = false
+score = false
+output-format = "json2"
+
+[tool.pylint.format]
+indent-string = "    "
+indent-after-paren = 4
+single-line-if-stmt = false
+single-line-class-stmt = false
+max-line-length = 100
+max-module-lines = 400
+
+[tool.pylint.similarities]
+ignore-comments = true
+ignore-docstrings = true
+ignore-imports = true
+ignore-signatures = true
+min-similarity-lines = 4
+
+[tool.pylint.design]
+# sklearn framework ancestry is not project inheritance (Eryx PROFILE.md).
+# Project-defined parents still count against max-parents = 3.
+ignored-parents = ["builtins.BaseException", "builtins.Exception", "builtins.RuntimeError", "builtins.OSError", "builtins.TimeoutError", "typing.Protocol", "typing_extensions.Protocol", "enum.Enum", "enum.StrEnum", "sklearn.base.BaseEstimator"]
+max-statements = 30
+max-complexity = 8
+max-branches = 8
+max-locals = 10
+max-returns = 4
+max-bool-expr = 4
+max-args = 5
+max-positional-arguments = 4
+max-attributes = 7
+max-public-methods = 12
+max-parents = 3
+min-public-methods = 2
+
+[tool.pylint.refactoring]
+max-nested-blocks = 4
+
+[tool.pylint.basic]
+# Retain Pylint defaults and sklearn's public fit/pairwise keyword names.
+good-names = ["i", "j", "k", "ex", "Run", "_", "X", "Y"]
+
+[tool.pylint.broad_try_clause]
+max-try-statements = 1
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = [".git/**", "**/.git/**", ".venv/**", "**/.venv/**", "venv/**", "**/venv/**", "__pycache__/**", "**/__pycache__/**", ".mypy_cache/**", "**/.mypy_cache/**", ".pytest_cache/**", "**/.pytest_cache/**", ".ruff_cache/**", "**/.ruff_cache/**", ".tox/**", "**/.tox/**", ".nox/**", "**/.nox/**", ".eryx/**", "**/.eryx/**", "node_modules/**", "**/node_modules/**", "build/**", "**/build/**", "dist/**", "**/dist/**", "vendor/**", "**/vendor/**", "vendored/**", "**/vendored/**", "_vendor/**", "**/_vendor/**", "generated/**", "**/generated/**", "_generated/**", "**/_generated/**", "migrations/**", "**/migrations/**"]
+ignore = [".git/**", "**/.git/**", ".venv/**", "**/.venv/**", "venv/**", "**/venv/**", "__pycache__/**", "**/__pycache__/**", ".mypy_cache/**", "**/.mypy_cache/**", ".pytest_cache/**", "**/.pytest_cache/**", ".ruff_cache/**", "**/.ruff_cache/**", ".tox/**", "**/.tox/**", ".nox/**", "**/.nox/**", ".eryx/**", "**/.eryx/**", "node_modules/**", "**/node_modules/**", "build/**", "**/build/**", "dist/**", "**/dist/**", "vendor/**", "**/vendor/**", "vendored/**", "**/vendored/**", "_vendor/**", "**/_vendor/**", "generated/**", "**/generated/**", "_generated/**", "**/_generated/**", "migrations/**", "**/migrations/**"]
+typeCheckingMode = "strict"
+pythonPlatform = "Linux"
+extraPaths = ["src"]
+pythonVersion = "3.13"
+analyzeUnannotatedFunctions = true
+enableReachabilityAnalysis = true
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+deprecateTypingAliases = true
+enableExperimentalFeatures = false
+reportImportCycles = "none"
+reportCallInDefaultInitializer = "error"
+reportImplicitOverride = "error"
+reportImplicitStringConcatenation = "error"
+reportMissingSuperCall = "error"
+reportPropertyTypeMismatch = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportUnreachable = "error"
+reportUnusedCallResult = "error"
+reportMissingModuleSource = "error"
+reportDuplicateImport = "error"
+reportUndefinedVariable = "error"
+reportUnboundVariable = "error"
+reportPossiblyUnboundVariable = "error"
+
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+extraPaths = ["src"]
+reportPrivateUsage = "none"
+reportUnusedCallResult = "none"
+
+[[tool.pyright.executionEnvironments]]
+root = "src"
+extraPaths = ["src"]
+
+[tool.pydoclint]
+style = "google"
+quiet = true
+exclude = "(?:^|[/\\\\])(?:\\.git|\\.venv|venv|__pycache__|\\.mypy_cache|\\.pytest_cache|\\.ruff_cache|\\.tox|\\.nox|\\.eryx|node_modules|build|dist|vendor|vendored|_vendor|generated|_generated|migrations)(?:[/\\\\]|$)"
+skip-checking-short-docstrings = false
+skip-checking-private-functions = false
+skip-checking-raises = false
+check-arg-order = true
+arg-type-hints-in-docstring = true
+arg-type-hints-in-signature = true
+check-return-types = true
+check-yield-types = true
+check-class-attributes = true
+should-document-private-class-attributes = true
+ignore-underscore-args = false
+ignore-private-args = false
+should-document-star-arguments = true
+check-style-mismatch = true
+check-arg-defaults = true
+allow-init-docstring = true
+require-inline-class-var-docs = false
+require-return-section-when-returning-nothing = false
+show-filenames-in-every-violation-message = true
+auto-regenerate-baseline = false
+
+[tool.clean-arch]
+project_type = "generic"
+visibility_enforcement = true
+# Numeric ABCs contain no I/O; domain validation accepts registered NumPy scalars
+# through numbers.Real/Integral without importing a numerical implementation.
+allowed_prefixes = ["numbers"]
+infrastructure_modules = ["buy_today.auto_eda", "buy_today.bundled_data", "buy_today.clustering.contracts", "buy_today.clustering.distances", "buy_today.clustering.evaluation", "buy_today.clustering.labels", "buy_today.clustering.models", "buy_today.clustering.models.temporal_estimator", "buy_today.clustering.plots", "buy_today.clustering.report", "buy_today.generation", "buy_today.pipeline_state", "buy_today.plot_style", "buy_today.preparation", "buy_today.preparation_sources", "buy_today.preparation_tables", "buy_today.progress", "buy_today.ranking.benchmark_report", "buy_today.ranking.data", "buy_today.ranking.evaluation", "buy_today.ranking.inference", "buy_today.ranking.publication", "buy_today.ranking.random", "buy_today.ranking.report_html", "buy_today.ranking.report_plots", "buy_today.ranking.report_validation", "buy_today.ranking.snapshots", "buy_today.ranking.svd", "buy_today.schema", "buy_today.summary", "buy_today.summary_render", "buy_today.summary_reports", "buy_today.update"]
+
+[tool.clean-arch.layer_map]
+Domain = ["domain"]
+UseCase = ["application", "use_cases", "usecase", "usecases"]
+Infrastructure = ["infrastructure", "adapters"]
+Interface = ["interfaces", "interface"]
+Bootstrap = ["bootstrap", "composition"]
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.models.temporal_estimator"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.models.temporal"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.report_validation"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.benchmark_report"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.evaluation"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.parameters"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.generation.parameters"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.contracts"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.distances"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.report_plots"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.training"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.preparation_sources"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.publication"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.report_html"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.preparation_tables"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.evaluation"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.model_spec"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.domain"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.labels"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.models"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.report"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.generation.domain"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.benchmark"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.inference"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.snapshots"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering.plots"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.auto_eda.domain"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.pipeline_config"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.storage"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.summary_reports"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.pipeline_state"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.domain"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.random"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.summary_render"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.cli_arguments"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.container_cli"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.bundled_data"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.data"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.preparation"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking.svd"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.cli_values"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.clustering"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.estimation"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.generation"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.plot_style"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.artifacts"
+name = "Domain"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.auto_eda"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.pipeline"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.progress"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.ranking"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.summary"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.schema"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.update"
+name = "Infrastructure"
+
+[[tool.clean-arch.layers]]
+module = "buy_today.cli"
+name = "Bootstrap"
+
+[[tool.clean-arch.layers]]
+module = "buy_today"
+name = "Domain"
 [build-system]
 requires = ["uv_build>=0.12.6,<0.13.0"]
 build-backend = "uv_build"

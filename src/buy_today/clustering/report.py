@@ -2,88 +2,127 @@
 
 from pathlib import Path
 import json
-from textwrap import dedent
+from typing import Any, Unpack, cast
 
-import nbformat
 import numpy as np
+from numpy.random import RandomState
 import pandas as pd
 
+from buy_today.auto_eda.cells import code, markdown, setup_code
 from buy_today.auto_eda.notebook import ReportPaths, execute_report
-from buy_today.clustering.evaluation import validate_evaluation_parameters
-from buy_today.clustering.training import check_labels
+from buy_today.clustering.contracts import BooleanArray, IntegerArray, Parameterized
+from buy_today.clustering.parameters import ReportOptions, ReportParameters
+from buy_today.clustering.labels import check_labels
 from buy_today.schema import CSV_DTYPES, ROW_KEY
 
 
-def parameter_metadata(estimator) -> dict:
+def parameter_metadata(estimator: Parameterized) -> dict[str, Any]:
     """Keep ordinary parameters typed and render non-JSON parameter objects.
 
     These are descriptive metadata, not an estimator serialization format;
     executable state remains in joblib. Numeric evaluation results stay strict.
+
+    Args:
+        estimator (Parameterized): Estimator exposing sklearn parameter metadata.
+
+    Returns:
+        dict[str, Any]: JSON-compatible descriptions of the estimator parameters.
     """
-    def describe(value):
+
+    def describe(value: object) -> object:
         if isinstance(value, np.generic):
-            return value.item()
+            return cast("np.generic[object]", value).item()
         if isinstance(value, np.ndarray):
             return value.tolist()
-        if isinstance(value, np.random.RandomState):
-            return {"class": "RandomState", "state": value.get_state()}
-        if hasattr(value, "get_params"):
-            return {"class": type(value).__name__, "parameters": value.get_params(deep=False)}
-        return repr(value)
+        if isinstance(value, RandomState):
+            result: object = {"class": "RandomState", "state": value.get_state()}
+        elif hasattr(value, "get_params"):
+            parameters = cast(Parameterized, value).get_params(deep=False)
+            result = {"class": type(value).__name__, "parameters": parameters}
+        else:
+            result = repr(value)
+        return result
 
-    return json.loads(json.dumps(estimator.get_params(deep=True), default=describe), parse_constant=str)
+    return json.loads(
+        json.dumps(estimator.get_params(deep=True), default=describe), parse_constant=str
+    )
 
 
 def read_labels(path: Path | str) -> pd.DataFrame:
-    labels = pd.read_csv(path, dtype={
-        **{column: CSV_DTYPES[column] for column in ROW_KEY}, "cluster_id": "int64",
-    })
+    labels = pd.read_csv(
+        path,
+        dtype={
+            **{column: CSV_DTYPES[column] for column in ROW_KEY},
+            "cluster_id": "int64",
+        },
+    )
     check_labels(labels)
     return labels
 
 
+def _row_index(frame: pd.DataFrame, name: str) -> pd.MultiIndex:
+    keys = frame[list(ROW_KEY)]
+    if keys.isna().any().any() or keys.duplicated().any():
+        raise ValueError(f"Missing or duplicate row keys in {name}")
+    return pd.MultiIndex.from_frame(keys)
+
+
 def align_assignments(
-    frame: pd.DataFrame, labels: pd.DataFrame, new_batch: pd.DataFrame,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Restore label order and last-batch membership by the composite row key."""
+    frame: pd.DataFrame,
+    labels: pd.DataFrame,
+    new_batch: pd.DataFrame,
+) -> tuple[IntegerArray, BooleanArray]:
+    """Restore label order and last-batch membership by the composite row key.
+
+    Args:
+        frame (pd.DataFrame): Evaluated dataset in desired row order.
+        labels (pd.DataFrame): Saved keyed assignments in arbitrary order.
+        new_batch (pd.DataFrame): Rows belonging to the most recent batch.
+
+    Returns:
+        tuple[IntegerArray, BooleanArray]: Labels and new-row membership in dataset order.
+
+    Raises:
+        ValueError: Assignment keys differ from the dataset or batch keys are outside it.
+    """
     check_labels(labels)
-    indexes = []
-    for name, data in (("dataset", frame), ("labels", labels), ("new_batch", new_batch)):
-        keys = data[list(ROW_KEY)]
-        if keys.isna().any().any() or keys.duplicated().any():
-            raise ValueError(f"Missing or duplicate row keys in {name}")
-        indexes.append(pd.MultiIndex.from_frame(keys))
-    frame_keys, label_keys, new_keys = indexes
+    frame_keys = _row_index(frame, "dataset")
+    label_keys = _row_index(labels, "labels")
+    new_keys = _row_index(new_batch, "new_batch")
     missing = len(frame_keys.difference(label_keys))
     extra = len(label_keys.difference(frame_keys))
     if missing or extra:
         raise ValueError(f"labels keys do not match dataset: missing={missing}, extra={extra}")
-    outside = len(new_keys.difference(frame_keys))
-    if outside:
+    if outside := len(new_keys.difference(frame_keys)):
         raise ValueError(f"new_batch keys outside dataset: {outside}")
-    positions = label_keys.get_indexer(frame_keys)
-    return labels["cluster_id"].to_numpy()[positions], frame_keys.isin(new_keys)
+    positions = pd.MultiIndex.get_indexer(label_keys, frame_keys)
+    return labels["cluster_id"].to_numpy()[positions], pd.MultiIndex.isin(frame_keys, new_keys)
 
 
 def report_clustering(
     dataset_path: Path | str,
     new_batch_path: Path | str,
     model_dir: Path | str,
-    *,
-    max_evaluation_rows=1000,
-    random_state=42,
-    thread_limit: int | None = None,
+    **options: Unpack[ReportOptions],
 ) -> ReportPaths:
-    """Execute loading, validation, sampling, silhouette and t-SNE in a notebook."""
-    validate_evaluation_parameters(max_evaluation_rows, random_state)
+    """Execute loading, validation, sampling, silhouette and t-SNE in a notebook.
+
+    Args:
+        dataset_path (Path | str): Accumulated dataset CSV.
+        new_batch_path (Path | str): Most recent batch CSV.
+        model_dir (Path | str): Directory containing the saved clustering snapshot.
+        **options (Unpack[ReportOptions]): Maximum sample size via
+            ``max_evaluation_rows`` (default 1000), sampling and projection seed via
+            ``random_state`` (default 42), and optional native kernel thread limit via
+            ``thread_limit`` (default None).
+
+    Returns:
+        ReportPaths: Paths of the executed notebook and standalone HTML report.
+    """
+    parameters = ReportParameters(**options)
     dataset_path = Path(dataset_path).resolve()
     new_batch_path = Path(new_batch_path).resolve()
     model_dir = Path(model_dir).resolve()
-    markdown = nbformat.v4.new_markdown_cell
-
-    def code(source):
-        return nbformat.v4.new_code_cell(dedent(source).strip())
-
     cells = [
         markdown("""# Оценка кластеризации Olist
 
@@ -92,15 +131,8 @@ def report_clustering(
 Оцениваются готовые метки всего накопленного датасета. Новые строки — позиции
 явно указанного последнего батча. Обучение выполняется отдельной командой `cluster`.
 """),
-        code(f"""
-            from pathlib import Path
-            import hashlib
-            import sys
+        setup_code(f"""
             import joblib
-            import pandas as pd
-            import matplotlib.pyplot as plt
-            from IPython.display import HTML, display
-            from buy_today.schema import read_dataset
             from buy_today.auto_eda.checks import check_dataset
             from buy_today.auto_eda.eda import dataset_summary
             from buy_today.auto_eda.notebook import write_metrics
@@ -139,8 +171,13 @@ def report_clustering(
                 display(HTML(table.to_html(index=False, escape=True, border=0)))
         """),
         markdown("## Размеры и период\nНакопленный датасет; даты без часового пояса, как в CSV."),
-        code("show_table(dataset_summary(frame))\nprint(f'Последний батч: {len(new_batch):,} позиций.')"),
-        markdown("## Параметры модели и расстояния\nМодель загружается только для показа параметров."),
+        code("""
+            show_table(dataset_summary(frame))
+            print(f'Последний батч: {len(new_batch):,} позиций.')
+        """),
+        markdown(
+            "## Параметры модели и расстояния\nМодель загружается только для показа параметров."
+        ),
         code("""
             model_info = {'class': type(model).__name__, 'parameters': parameter_metadata(model)}
             distance_info = {'class': type(distance).__name__, 'parameters': parameter_metadata(distance)}
@@ -169,8 +206,8 @@ def report_clustering(
 Силуэт: от −1 до 1, больше — лучше разделение в выбранном расстоянии.
 """),
         code(f"""
-            max_evaluation_rows = {int(max_evaluation_rows)}
-            random_state = {int(random_state)}
+            max_evaluation_rows = {int(parameters.max_evaluation_rows)}
+            random_state = {int(parameters.random_state)}
             result = evaluate_clustering(
                 frame, labels, distance=distance, new_rows=new_rows,
                 max_evaluation_rows=max_evaluation_rows, random_state=random_state,
@@ -224,4 +261,6 @@ def report_clustering(
             })
         """),
     ]
-    return execute_report(cells, model_dir, title="Оценка кластеризации Olist", thread_limit=thread_limit)
+    return execute_report(
+        cells, model_dir, title="Оценка кластеризации Olist", thread_limit=parameters.thread_limit
+    )

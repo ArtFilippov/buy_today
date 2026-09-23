@@ -18,3 +18,9 @@ wheels/
 
 # Trained models, labels and evaluation reports
 /models/
+
+# Local Eryx reports, logs and native cache
+/.eryx/reports/
+/.eryx/logs/
+/.eryx/cache/
+/.tach/

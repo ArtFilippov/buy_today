@@ -1,0 +1,508 @@
+# Reviewed scientific adapters, pure contracts, and explicit composition roots.
+source_roots = ["src"]
+exclude = [".git/**", "**/.git/**", ".venv/**", "**/.venv/**", "venv/**", "**/venv/**", "__pycache__/**", "**/__pycache__/**", ".mypy_cache/**", "**/.mypy_cache/**", ".pytest_cache/**", "**/.pytest_cache/**", ".ruff_cache/**", "**/.ruff_cache/**", ".tox/**", "**/.tox/**", ".nox/**", "**/.nox/**", ".eryx/**", "**/.eryx/**", "node_modules/**", "**/node_modules/**", "build/**", "**/build/**", "dist/**", "**/dist/**", "vendor/**", "**/vendor/**", "vendored/**", "**/vendored/**", "_vendor/**", "**/_vendor/**", "generated/**", "**/generated/**", "_generated/**", "**/_generated/**", "migrations/**", "**/migrations/**", "tests/**", "**/tests/**", "**/test/**"]
+exact = true
+forbid_circular_dependencies = true
+ignore_type_checking_imports = false
+layers_explicit_depends_on = true
+root_module = "forbid"
+respect_gitignore = false
+layers = ["Bootstrap", "Interface", "Infrastructure", "UseCase", "Domain"]
+
+[[modules]]
+path = "buy_today"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.auto_eda"
+layer = "Infrastructure"
+depends_on = ["buy_today.auto_eda.domain", "buy_today.artifacts", "buy_today.schema", "buy_today.progress", "buy_today.plot_style"]
+
+[[modules]]
+path = "buy_today.auto_eda.domain"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.clustering"
+layer = "Bootstrap"
+depends_on = ["buy_today.clustering.evaluation", "buy_today.clustering.report", "buy_today.clustering.training"]
+
+[[modules]]
+path = "buy_today.clustering.contracts"
+layer = "Infrastructure"
+depends_on = ["buy_today.clustering.domain"]
+
+[[modules]]
+path = "buy_today.clustering.domain"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.clustering.parameters"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.clustering.distances"
+layer = "Infrastructure"
+depends_on = ["buy_today.schema", "buy_today.estimation"]
+
+[[modules]]
+path = "buy_today.clustering.models"
+layer = "Infrastructure"
+depends_on = ["buy_today.clustering.contracts", "buy_today.clustering.domain"]
+
+[[modules]]
+path = "buy_today.clustering.models.temporal"
+layer = "Bootstrap"
+depends_on = ["buy_today.clustering.contracts", "buy_today.clustering.distances", "buy_today.clustering.models", "buy_today.clustering.models.temporal_estimator", "buy_today.schema"]
+
+[[modules]]
+path = "buy_today.clustering.models.temporal_estimator"
+layer = "Infrastructure"
+depends_on = ["buy_today.estimation", "buy_today.schema"]
+
+[[modules]]
+path = "buy_today.clustering.labels"
+layer = "Infrastructure"
+depends_on = ["buy_today.schema"]
+
+[[modules]]
+path = "buy_today.clustering.evaluation"
+layer = "Infrastructure"
+depends_on = ["buy_today.clustering.contracts", "buy_today.clustering.parameters", "buy_today.clustering.domain"]
+
+[[modules]]
+path = "buy_today.clustering.plots"
+layer = "Infrastructure"
+depends_on = ["buy_today.clustering.contracts", "buy_today.clustering.evaluation", "buy_today.clustering.domain"]
+
+[[modules]]
+path = "buy_today.clustering.report"
+layer = "Infrastructure"
+depends_on = ["buy_today.auto_eda", "buy_today.clustering.contracts", "buy_today.clustering.parameters", "buy_today.clustering.labels", "buy_today.schema"]
+
+[[modules]]
+path = "buy_today.clustering.training"
+layer = "Bootstrap"
+depends_on = ["buy_today.auto_eda", "buy_today.clustering.labels", "buy_today.clustering.models", "buy_today.clustering.models.temporal", "buy_today.schema"]
+
+[[modules]]
+path = "buy_today.generation"
+layer = "Infrastructure"
+depends_on = ["buy_today.auto_eda", "buy_today.schema", "buy_today.generation.parameters", "buy_today.generation.domain"]
+
+[[modules]]
+path = "buy_today.generation.domain"
+layer = "Domain"
+depends_on = ["buy_today.generation.parameters"]
+
+[[modules]]
+path = "buy_today.generation.parameters"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.ranking"
+layer = "Bootstrap"
+depends_on = ["buy_today.ranking.data", "buy_today.ranking.evaluation", "buy_today.ranking.random", "buy_today.ranking.svd", "buy_today.ranking.storage", "buy_today.ranking.inference", "buy_today.ranking.benchmark", "buy_today.ranking.benchmark_report"]
+
+[[modules]]
+path = "buy_today.ranking.domain"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.ranking.data"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.domain"]
+
+[[modules]]
+path = "buy_today.ranking.evaluation"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.data", "buy_today.ranking.domain"]
+
+[[modules]]
+path = "buy_today.ranking.random"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.data", "buy_today.estimation"]
+
+[[modules]]
+path = "buy_today.ranking.svd"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.data", "buy_today.estimation"]
+
+[[modules]]
+path = "buy_today.ranking.storage"
+layer = "Bootstrap"
+depends_on = ["buy_today.ranking.domain", "buy_today.ranking.random", "buy_today.ranking.snapshots"]
+
+[[modules]]
+path = "buy_today.ranking.snapshots"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.data", "buy_today.ranking.domain", "buy_today.ranking.evaluation"]
+
+[[modules]]
+path = "buy_today.ranking.inference"
+layer = "Infrastructure"
+depends_on = ["buy_today.progress", "buy_today.ranking.domain", "buy_today.ranking.snapshots"]
+
+[[modules]]
+path = "buy_today.ranking.model_spec"
+layer = "Bootstrap"
+depends_on = ["buy_today.ranking.domain", "buy_today.ranking.random", "buy_today.ranking.svd"]
+
+[[modules]]
+path = "buy_today.ranking.benchmark"
+layer = "Bootstrap"
+depends_on = ["buy_today.ranking.data", "buy_today.ranking.domain", "buy_today.ranking.evaluation", "buy_today.ranking.model_spec", "buy_today.ranking.publication", "buy_today.ranking.snapshots"]
+
+[[modules]]
+path = "buy_today.ranking.publication"
+layer = "Infrastructure"
+depends_on = []
+
+[[modules]]
+path = "buy_today.ranking.report_validation"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.domain", "buy_today.ranking.publication"]
+
+[[modules]]
+path = "buy_today.ranking.report_plots"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.publication", "buy_today.ranking.report_validation", "buy_today.plot_style"]
+
+[[modules]]
+path = "buy_today.plot_style"
+layer = "Infrastructure"
+depends_on = []
+
+[[modules]]
+path = "buy_today.ranking.report_html"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.publication", "buy_today.ranking.report_plots", "buy_today.ranking.report_validation"]
+
+[[modules]]
+path = "buy_today.ranking.benchmark_report"
+layer = "Infrastructure"
+depends_on = ["buy_today.ranking.publication", "buy_today.ranking.report_html", "buy_today.ranking.report_validation", "buy_today.ranking.domain"]
+
+[[modules]]
+path = "buy_today.artifacts"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.estimation"
+layer = "Domain"
+depends_on = []
+
+[[modules]]
+path = "buy_today.schema"
+layer = "Infrastructure"
+depends_on = []
+
+[[modules]]
+path = "buy_today.progress"
+layer = "Infrastructure"
+depends_on = []
+
+[[modules]]
+path = "buy_today.bundled_data"
+layer = "Infrastructure"
+depends_on = []
+
+[[modules]]
+path = "buy_today.preparation_sources"
+layer = "Infrastructure"
+depends_on = ["buy_today.schema"]
+
+[[modules]]
+path = "buy_today.preparation_tables"
+layer = "Infrastructure"
+depends_on = ["buy_today.schema", "buy_today.artifacts"]
+
+[[modules]]
+path = "buy_today.preparation"
+layer = "Infrastructure"
+depends_on = ["buy_today.preparation_sources", "buy_today.preparation_tables", "buy_today.progress", "buy_today.schema", "buy_today.artifacts"]
+
+[[modules]]
+path = "buy_today.update"
+layer = "Infrastructure"
+depends_on = ["buy_today.auto_eda", "buy_today.progress", "buy_today.schema", "buy_today.artifacts"]
+
+[[modules]]
+path = "buy_today.pipeline_config"
+layer = "Domain"
+depends_on = ["buy_today.auto_eda.domain", "buy_today.generation.parameters"]
+
+[[modules]]
+path = "buy_today.pipeline_state"
+layer = "Infrastructure"
+depends_on = ["buy_today.pipeline_config"]
+
+[[modules]]
+path = "buy_today.pipeline"
+layer = "Bootstrap"
+depends_on = ["buy_today.clustering.models.temporal", "buy_today.clustering.report", "buy_today.clustering.training", "buy_today.generation", "buy_today.pipeline_config", "buy_today.pipeline_state", "buy_today.progress", "buy_today.ranking", "buy_today.update"]
+
+[[modules]]
+path = "buy_today.summary_render"
+layer = "Infrastructure"
+depends_on = ["buy_today.pipeline_state"]
+
+[[modules]]
+path = "buy_today.summary_reports"
+layer = "Infrastructure"
+depends_on = ["buy_today.pipeline_config", "buy_today.pipeline_state"]
+
+[[modules]]
+path = "buy_today.summary"
+layer = "Infrastructure"
+depends_on = ["buy_today.pipeline_state", "buy_today.summary_render", "buy_today.summary_reports", "buy_today.artifacts"]
+
+[[modules]]
+path = "buy_today.cli_values"
+layer = "Bootstrap"
+depends_on = ["buy_today.pipeline_config", "buy_today.ranking.model_spec"]
+
+[[modules]]
+path = "buy_today.cli_arguments"
+layer = "Bootstrap"
+depends_on = ["buy_today.auto_eda.domain", "buy_today.cli_values"]
+
+[[modules]]
+path = "buy_today.cli"
+layer = "Bootstrap"
+depends_on = ["buy_today.auto_eda", "buy_today.cli_arguments", "buy_today.cli_values", "buy_today.clustering.distances", "buy_today.clustering.models.temporal", "buy_today.clustering.report", "buy_today.clustering.training", "buy_today.generation", "buy_today.preparation", "buy_today.pipeline", "buy_today.ranking", "buy_today.summary", "buy_today.update"]
+
+[[modules]]
+path = "buy_today.container_cli"
+layer = "Bootstrap"
+depends_on = ["buy_today.auto_eda", "buy_today.bundled_data", "buy_today.cli_arguments", "buy_today.cli_values", "buy_today.pipeline", "buy_today.preparation", "buy_today.progress", "buy_today.ranking", "buy_today.summary"]
+
+[[interfaces]]
+from = ["^buy_today$"]
+expose = []
+
+[[interfaces]]
+from = ["^buy_today\\.auto_eda$"]
+# dataset_summary is also used by the generated clustering notebook.
+expose = ["DriftThresholds$", "report_dataset$", "report_drift$", "checks\\.check_(dataset|combination)$", "notebook\\.(ReportPaths|execute_report|write_metrics)$", "cells\\.(code|markdown|setup_code)$", "eda\\.dataset_summary$"]
+
+[[interfaces]]
+from = ["^buy_today\\.auto_eda\\.domain$"]
+expose = ["DriftThresholds$", "DriftResult$"]
+
+[[interfaces]]
+from = ["^buy_today\\.artifacts$"]
+expose = ["ReportPaths$", "UpdateReports$", "SummaryPaths$", "PreparationResult$", "PreparationStatistics$"]
+
+[[interfaces]]
+from = ["^buy_today\\.estimation$"]
+expose = ["Fittable$", "Distance$", "Clusterable$", "Ranker$"]
+
+[[interfaces]]
+from = ["^buy_today\\.plot_style$"]
+expose = ["REPORT_STYLE$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.models\\.temporal_estimator$"]
+expose = ["TemporalClustering$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.domain$"]
+expose = ["PairwiseDistance$", "TrainableDistance$", "Parameterized$", "ModelSnapshot$", "EvaluationResult$", "ProjectionResult$"]
+
+[[interfaces]]
+from = ["^buy_today\\.generation\\.domain$"]
+expose = ["PairwiseDistance$", "BatchRecord$", "DatasetOptions$", "DatasetSettings$", "DistanceRecord$", "GeneratedHistories$", "GenerationPaths$", "HistoryDataset$", "HistoryManifest$", "Integer$", "SamplingOptions$", "SamplingParameters$", "SnapshotInputs$", "SourceRecord$", "SplitSizes$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering$"]
+expose = ["EvaluationResult$", "evaluate_clustering$", "report_clustering$", "TrainingPaths$", "train_clustering$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.contracts$"]
+expose = ["(FeatureMatrix|IntegerArray|FloatArray|BooleanArray|PairwiseDistance|TrainableDistance|Parameterized)$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.parameters$"]
+expose = ["(EvaluationOptions|ReportOptions|EvaluationParameters|ReportParameters|validate_evaluation_parameters)$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.distances$"]
+expose = ["(?:temporal_distances\\.)?TimestampDistance$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.models$"]
+expose = ["ModelSnapshot$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.models\\.temporal$"]
+expose = ["TemporalClustering$", "train_temporal$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.labels$"]
+expose = ["check_labels$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.evaluation$"]
+expose = ["EvaluationResult$", "evaluate_clustering$", "validate_evaluation_parameters$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.plots$"]
+expose = ["ProjectionResult$", "project_tsne$", "plot_tsne$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.report$"]
+# The executed report imports these validation/metadata operations by name.
+expose = ["report_clustering$", "read_labels$", "align_assignments$", "parameter_metadata$"]
+
+[[interfaces]]
+from = ["^buy_today\\.clustering\\.training$"]
+expose = ["TrainingPaths$", "train_clustering$", "check_labels$"]
+
+[[interfaces]]
+from = ["^buy_today\\.generation$"]
+expose = ["GeneratedHistories$", "GenerationPaths$", "generate_histories$", "generate_dataset$", "read_history_dataset$"]
+
+[[interfaces]]
+from = ["^buy_today\\.generation\\.parameters$"]
+expose = ["check_integer$", "check_parameters$", "SPLITS$", "DEFAULT_SPLIT_SIZES$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking$"]
+expose = ["RankingData$", "read_ranking_data$", "RankingEvaluation$", "evaluate_ranker$", "RandomRanker$", "SVDRanker$", "EvaluationPaths$", "TrainingPaths$", "report_ranking$", "train_ranker$", "export_recommendations$", "recommend$", "run_ranking_benchmark$", "read_latest_benchmark_runs$", "parse_model_spec$", "BenchmarkReportPaths$", "report_ranking_benchmark$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.domain$"]
+expose = ["Predictor$", "Estimator$", "Source$", "Dataset$", "Timings$", "DatasetRun$", "SVD$", "RankingData$", "RankingEvaluation$", "TrainingPaths$", "EvaluationPaths$", "BenchmarkReportPaths$", "EvaluationSource$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.data$"]
+expose = ["RankingData$", "check_integer$", "check_ranking_data$", "read_ranking_data$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.evaluation$"]
+expose = ["RankingEvaluation$", "evaluate_ranker$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.random$"]
+expose = ["RandomRanker$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.svd$"]
+expose = ["SVDRanker$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.storage$"]
+expose = ["TrainingPaths$", "EvaluationPaths$", "digest$", "users_digest$", "source_record$", "write_json$", "write_fitted_ranker$", "train_ranker$", "report_ranking$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.snapshots$"]
+expose = ["TrainingPaths$", "EvaluationPaths$", "digest$", "users_digest$", "source_record$", "write_json$", "write_fitted_ranker$", "train_snapshot$", "report_ranking$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.inference$"]
+expose = ["recommend$", "export_recommendations$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.model_spec$"]
+expose = ["ModelConfiguration$", "SVD$", "parse_model_spec$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.benchmark$"]
+expose = ["ModelConfiguration$", "run_ranking_benchmark$", "read_latest_benchmark_runs$", "parse_model_spec$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.publication$"]
+expose = ["Metadata$", "SelectedRuns$", "COMMIT_KIND$", "RUN_ID$", "RUN_KIND$", "TIMESTAMP$", "read_latest_benchmark_runs$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.report_validation$"]
+expose = ["METRICS$", "TIMINGS$", "CSV_COLUMNS$", "comparison_rows$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.report_plots$"]
+expose = ["dataset_plot$", "heatmap$", "image$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.report_html$"]
+expose = ["comparison_html$"]
+
+[[interfaces]]
+from = ["^buy_today\\.ranking\\.benchmark_report$"]
+expose = ["BenchmarkReportPaths$", "report_ranking_benchmark$"]
+
+[[interfaces]]
+from = ["^buy_today\\.schema$"]
+expose = ["DATE_FORMAT$", "DATE_COLUMNS$", "ROW_KEY$", "SORT_KEY$", "DTYPES$", "COLUMNS$", "CSV_DTYPES$", "read_dataset$"]
+
+[[interfaces]]
+from = ["^buy_today\\.progress$"]
+expose = ["stage$"]
+
+[[interfaces]]
+from = ["^buy_today\\.bundled_data$"]
+expose = ["OLIST_FILES$", "download_olist$", "main$"]
+
+[[interfaces]]
+from = ["^buy_today\\.preparation_sources$"]
+expose = ["read_sources$", "source_metadata$"]
+
+[[interfaces]]
+from = ["^buy_today\\.preparation_tables$"]
+expose = ["PreparationStatistics$", "assemble$", "clean$"]
+
+[[interfaces]]
+from = ["^buy_today\\.preparation$"]
+expose = ["prepare_data$", "PreparationResult$"]
+
+[[interfaces]]
+from = ["^buy_today\\.update$"]
+expose = ["UpdateReports$", "initialize_reference$", "update_reference$"]
+
+[[interfaces]]
+from = ["^buy_today\\.pipeline_config$"]
+expose = ["PipelineConfig$", "SVD_MODEL$", "config_dict$", "parse_config$"]
+
+[[interfaces]]
+from = ["^buy_today\\.pipeline_state$"]
+expose = ["Metadata$", "digest$", "initialize$", "load_run$", "read_json$", "write_json$", "read_completed_steps$", "read_pipeline_config$", "write_output$"]
+
+[[interfaces]]
+from = ["^buy_today\\.pipeline$"]
+expose = ["PipelineConfig$", "StepResult$", "run_next_batch$", "run_pipeline$", "read_pipeline_config$", "read_completed_steps$"]
+
+[[interfaces]]
+from = ["^buy_today\\.summary_render$"]
+expose = ["csv_text$", "flat_row$", "html_text$"]
+
+[[interfaces]]
+from = ["^buy_today\\.summary_reports$"]
+expose = ["step_record$"]
+
+[[interfaces]]
+from = ["^buy_today\\.summary$"]
+expose = ["SummaryPaths$", "report_summary$"]
+
+[[interfaces]]
+from = ["^buy_today\\.cli_values$"]
+expose = ["Command$", "SVD$", "SVD_OPTIONS_ERROR$", "THRESHOLDS$", "SPLIT_SIZES$", "MAX_RANDOM_STATE$", "positive_int$", "drift_threshold$", "random_state$", "positive_float$", "benchmark_model$", "pipeline_options$", "threshold_options$", "svd_options_requested$"]
+
+[[interfaces]]
+from = ["^buy_today\\.cli_arguments$"]
+expose = ["ParserFactory$", "command_factory$", "build_parser$"]
+
+[[interfaces]]
+from = ["^buy_today\\.(cli|container_cli)$"]
+expose = ["main$"]
+
+[rules]
+unused_ignore_directives = "error"
+require_ignore_directive_reasons = "error"
+unused_external_dependencies = "error"

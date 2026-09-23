@@ -1,0 +1,872 @@
+{
+  "modules": {
+    "matplotlib/__init__.pyi": {
+      "sha256": "86791225b6ad6c36e3214d0ef4d6fff2e00ba72b7b5e626696e6b567db62d71b",
+      "source": "matplotlib/__init__.pyi"
+    },
+    "matplotlib/axes/__init__.pyi": {
+      "sha256": "1cfd73daff8f6e81d04b87508ef27b5e35235fecf0ead6994534c1f6854ac181",
+      "source": "matplotlib/axes/__init__.pyi"
+    },
+    "matplotlib/axes/_axes.pyi": {
+      "sha256": "0f0ab36ea07cf5fb4156fb1ba080552b8e6745f426872f308703c412f7f2fc47",
+      "source": "matplotlib/axes/_axes.pyi"
+    },
+    "matplotlib/axes/_base.pyi": {
+      "sha256": "efa9d82fbaf71c6c1bca332cffde5fcef02e66c88f8b607176a8e8d6de2ecac5",
+      "source": "matplotlib/axes/_base.pyi"
+    },
+    "matplotlib/figure.pyi": {
+      "sha256": "36c3f174c2b1a622d1d28cfd79f96b61e92ee614428689a679e66a9bfd76f3bc",
+      "source": "matplotlib/figure.pyi"
+    },
+    "matplotlib/pyplot.pyi": {
+      "sha256": "2c27b5739ad10034f22866cc7647ce968c56f9625cf0f7a288b800e94917ea51",
+      "source": "matplotlib/pyplot.py"
+    },
+    "sklearn/__init__.pyi": {
+      "sha256": "fcff08ba6934fd668af6640fdaac22eace78de1389de31e5a467a741f1a9287b",
+      "source": "sklearn-stubs/__init__.pyi"
+    },
+    "sklearn/_config.pyi": {
+      "sha256": "3e047935f60b7341f2a1dc558217963ac4c175239310085b371c3e649e5532f2",
+      "source": "sklearn-stubs/_config.pyi"
+    },
+    "sklearn/_loss/__init__.pyi": {
+      "sha256": "09d7278000087bd6b7cdfd5fe70580c4dc8eb50631c7840acc16e94009d4a2b0",
+      "source": "sklearn-stubs/_loss/__init__.pyi"
+    },
+    "sklearn/_loss/glm_distribution.pyi": {
+      "sha256": "8b45c16e8282cbd883c892a1a9de3574dff73c1b3eecfa6879f7d022abc04874",
+      "source": "sklearn-stubs/_loss/glm_distribution.pyi"
+    },
+    "sklearn/_loss/link.pyi": {
+      "sha256": "a2ee8368ef5a120a45eb24a7f5022ee899af34ecdafbf79d5b624f6a51d478a3",
+      "source": "sklearn-stubs/_loss/link.pyi"
+    },
+    "sklearn/_loss/loss.pyi": {
+      "sha256": "3e7d1b729a0170e6a1f268ccabcd37619e7abf44b9578e05f52deb0dc4f2370a",
+      "source": "sklearn-stubs/_loss/loss.pyi"
+    },
+    "sklearn/_typing.pyi": {
+      "sha256": "360afaed47bd08d88a7d3685a0033f10bb00e643e0e7bc5136b35669be656dde",
+      "source": "sklearn-stubs/_typing.pyi"
+    },
+    "sklearn/calibration.pyi": {
+      "sha256": "58b6ed91d7ece282e8e6b38c007fbfcaccfc34b113cde851c6f359630bc6abfa",
+      "source": "sklearn-stubs/calibration.pyi"
+    },
+    "sklearn/cluster/__init__.pyi": {
+      "sha256": "79eb630924844590197365b1d6dcb0da8576273a31d0767e4d8547045a2a618a",
+      "source": "sklearn-stubs/cluster/__init__.pyi"
+    },
+    "sklearn/cluster/_affinity_propagation.pyi": {
+      "sha256": "ed03685b859fd41721c2f1c23c32823c48bf0e58144f9ab0ee18cde3f86fa7a6",
+      "source": "sklearn-stubs/cluster/_affinity_propagation.pyi"
+    },
+    "sklearn/cluster/_agglomerative.pyi": {
+      "sha256": "a24fda31ad5a645499c0eaa125377fd43da964815c110195b06edafde89ca9e8",
+      "source": "sklearn-stubs/cluster/_agglomerative.pyi"
+    },
+    "sklearn/cluster/_bicluster.pyi": {
+      "sha256": "3370f9ab85e5e60778b5052b998433fd31a94c59527dadce36ccaec5a40684bc",
+      "source": "sklearn-stubs/cluster/_bicluster.pyi"
+    },
+    "sklearn/cluster/_birch.pyi": {
+      "sha256": "4f36d2642b9fa3ddb098c2f0447e1b20f4f4bed49cf5a2aa258f8084f17ffe90",
+      "source": "sklearn-stubs/cluster/_birch.pyi"
+    },
+    "sklearn/cluster/_bisect_k_means.pyi": {
+      "sha256": "b857d47f02d0a1dd748802e990cb73285ad080dfbe4ff2b28bcb2591d16be693",
+      "source": "sklearn-stubs/cluster/_bisect_k_means.pyi"
+    },
+    "sklearn/cluster/_dbscan.pyi": {
+      "sha256": "de979cd4a7bf1096fbf980540c2c398ae00cf43543d5daf467bfb0e5e81f53ed",
+      "source": "sklearn-stubs/cluster/_dbscan.pyi"
+    },
+    "sklearn/cluster/_feature_agglomeration.pyi": {
+      "sha256": "2acbb6d7ebba26b5317d130d406f4ca2375172a4fb717327fbbf0a3c4a93e8ce",
+      "source": "sklearn-stubs/cluster/_feature_agglomeration.pyi"
+    },
+    "sklearn/cluster/_kmeans.pyi": {
+      "sha256": "73cbb69a1c3bc6baa466e317d1cab9c2ab25ade417034e2a1378d7c85e89432e",
+      "source": "sklearn-stubs/cluster/_kmeans.pyi"
+    },
+    "sklearn/cluster/_mean_shift.pyi": {
+      "sha256": "dab9c8e65f7004619ca02d85ed7f05b78549df6e5d02540f0e71016d1c05eacf",
+      "source": "sklearn-stubs/cluster/_mean_shift.pyi"
+    },
+    "sklearn/cluster/_optics.pyi": {
+      "sha256": "316be65794cb13c3ad29986c6d366ed36548751dbb6dbcce07b982abed2fc030",
+      "source": "sklearn-stubs/cluster/_optics.pyi"
+    },
+    "sklearn/cluster/_spectral.pyi": {
+      "sha256": "275f49ae8df61c4ca2bd985947e0f35337880f8c2a9b0773f1b7718302ff25fb",
+      "source": "sklearn-stubs/cluster/_spectral.pyi"
+    },
+    "sklearn/compose/__init__.pyi": {
+      "sha256": "ab634ffdca20346788bf6741ad997b7ea40c60b2ddaa032fd2e0cfaeae5056db",
+      "source": "sklearn-stubs/compose/__init__.pyi"
+    },
+    "sklearn/compose/_column_transformer.pyi": {
+      "sha256": "b434b9ca024a4ec42f495617bc440348ae3e18517fd311e94d9276021a6121dd",
+      "source": "sklearn-stubs/compose/_column_transformer.pyi"
+    },
+    "sklearn/compose/_target.pyi": {
+      "sha256": "f1a26cbac530992765d1d2a32a012eeb802c9a7619d889909d048c1afbf5ea95",
+      "source": "sklearn-stubs/compose/_target.pyi"
+    },
+    "sklearn/conftest.pyi": {
+      "sha256": "e16a90eb29ea003c8fec3282fd8d4a61783bc8c354afdb1420b752e7eafd03a8",
+      "source": "sklearn-stubs/conftest.pyi"
+    },
+    "sklearn/covariance/__init__.pyi": {
+      "sha256": "22bf2aae2ea260551b88f39aab67d4b244cde14ebbdbe1552586495c8766841f",
+      "source": "sklearn-stubs/covariance/__init__.pyi"
+    },
+    "sklearn/covariance/_elliptic_envelope.pyi": {
+      "sha256": "ebcad500f13237e23d6e3225a9a3b7e86941ebe3526069e74d1c204da1cb9b53",
+      "source": "sklearn-stubs/covariance/_elliptic_envelope.pyi"
+    },
+    "sklearn/covariance/_empirical_covariance.pyi": {
+      "sha256": "ea322aca3a4ee5b5ce9270503216c491c6bb1549c277973dc45bfe2d280ed37b",
+      "source": "sklearn-stubs/covariance/_empirical_covariance.pyi"
+    },
+    "sklearn/covariance/_graph_lasso.pyi": {
+      "sha256": "4fd9f58fbe2097fd81075077904e8b1dda6b57d964148d723a6d3cc4a4d34928",
+      "source": "sklearn-stubs/covariance/_graph_lasso.pyi"
+    },
+    "sklearn/covariance/_robust_covariance.pyi": {
+      "sha256": "232889a1434e7bd0a0bc88176cffe71032e0f98776295c076b0235f7e8ea0e0b",
+      "source": "sklearn-stubs/covariance/_robust_covariance.pyi"
+    },
+    "sklearn/covariance/_shrunk_covariance.pyi": {
+      "sha256": "843dd6dca33c55211d3f29d1ca71f54969e3f3cc6935ef6dbac3149373eeed5d",
+      "source": "sklearn-stubs/covariance/_shrunk_covariance.pyi"
+    },
+    "sklearn/cross_decomposition/__init__.pyi": {
+      "sha256": "fc95622ee4da6cec15839c18225771fd48e94e309b0b86e6ebbb2cbaccd38dca",
+      "source": "sklearn-stubs/cross_decomposition/__init__.pyi"
+    },
+    "sklearn/cross_decomposition/_pls.pyi": {
+      "sha256": "5b0c241959a7e98147ba6c748c1ef34d75dd4033b6e7a652f5b7fd03c0be4ceb",
+      "source": "sklearn-stubs/cross_decomposition/_pls.pyi"
+    },
+    "sklearn/datasets/__init__.pyi": {
+      "sha256": "fa7fc1907bbe2d51c5677ce36e62f4af4429dbf48dbf5d5045a92d0380ec45da",
+      "source": "sklearn-stubs/datasets/__init__.pyi"
+    },
+    "sklearn/datasets/_base.pyi": {
+      "sha256": "bbcc3b76d5a3d7067c19b4368f75079af41d0199a66be6deb79c7aeac353b192",
+      "source": "sklearn-stubs/datasets/_base.pyi"
+    },
+    "sklearn/datasets/_california_housing.pyi": {
+      "sha256": "fd4d19ee32e0e2d15c4b969a64abd992d490949e17ae77d9a59531b466846a54",
+      "source": "sklearn-stubs/datasets/_california_housing.pyi"
+    },
+    "sklearn/datasets/_covtype.pyi": {
+      "sha256": "d44e432f92f5c76d09d9f9723e2aeb781abaf3e076db2f4e8b9bb30b6833c37a",
+      "source": "sklearn-stubs/datasets/_covtype.pyi"
+    },
+    "sklearn/datasets/_kddcup99.pyi": {
+      "sha256": "fef7ebbc6e3509dbfe29b8e9d3e779566b88cef6173a60cd980367d1c2d63bb7",
+      "source": "sklearn-stubs/datasets/_kddcup99.pyi"
+    },
+    "sklearn/datasets/_lfw.pyi": {
+      "sha256": "05eb6442dbf6cf6edeed2dfdeb29e3a72ee1ac510907855d0663f5b62ddbdd9f",
+      "source": "sklearn-stubs/datasets/_lfw.pyi"
+    },
+    "sklearn/datasets/_olivetti_faces.pyi": {
+      "sha256": "0c3653c7140833930e695cebb2263529bb3d55f3989676f72c760a82e60396fe",
+      "source": "sklearn-stubs/datasets/_olivetti_faces.pyi"
+    },
+    "sklearn/datasets/_openml.pyi": {
+      "sha256": "f68300eea0381089ad511f78a047b364ae8b3f93eb16fc716dad966b2d8dad0f",
+      "source": "sklearn-stubs/datasets/_openml.pyi"
+    },
+    "sklearn/datasets/_rcv1.pyi": {
+      "sha256": "435c5f15d037666b2bb09568457870612a587aac6aa163f3bd97fa8ab68282b7",
+      "source": "sklearn-stubs/datasets/_rcv1.pyi"
+    },
+    "sklearn/datasets/_samples_generator.pyi": {
+      "sha256": "064b1720e5b804e9c3eb94bccb9e339857b2bbcc4703424c170f6ec4d04d6eb2",
+      "source": "sklearn-stubs/datasets/_samples_generator.pyi"
+    },
+    "sklearn/datasets/_svmlight_format_io.pyi": {
+      "sha256": "545ec17954679590f769c97fd514a6281895f25a355824386998f474678d6600",
+      "source": "sklearn-stubs/datasets/_svmlight_format_io.pyi"
+    },
+    "sklearn/datasets/_twenty_newsgroups.pyi": {
+      "sha256": "651406cdb24c0fb6dcf1e87a252078ecfbd65156de4a32854fa5a60f92622938",
+      "source": "sklearn-stubs/datasets/_twenty_newsgroups.pyi"
+    },
+    "sklearn/decomposition/__init__.pyi": {
+      "sha256": "7d008b33e9fd0fc04d152af992f29e466ac142ab93790fb134470ea66f5bc140",
+      "source": "sklearn-stubs/decomposition/__init__.pyi"
+    },
+    "sklearn/decomposition/_base.pyi": {
+      "sha256": "6f22ab3c912db0f6401380c58d379bac6f1cc28460ce7a83e9860c69ced253df",
+      "source": "sklearn-stubs/decomposition/_base.pyi"
+    },
+    "sklearn/decomposition/_dict_learning.pyi": {
+      "sha256": "1a3460c9534cad44b5d0e05b008449776a00e5730a2c60d36f874a6d1d3160b8",
+      "source": "sklearn-stubs/decomposition/_dict_learning.pyi"
+    },
+    "sklearn/decomposition/_factor_analysis.pyi": {
+      "sha256": "8f053a5bd7816eaed7fce25cc5b07b9c1228668d5ddef1679594049c277cb1b3",
+      "source": "sklearn-stubs/decomposition/_factor_analysis.pyi"
+    },
+    "sklearn/decomposition/_fastica.pyi": {
+      "sha256": "3133a30aa129596a65bd052b0e3383c072433ec26dc17def287b15b1384f56ba",
+      "source": "sklearn-stubs/decomposition/_fastica.pyi"
+    },
+    "sklearn/decomposition/_incremental_pca.pyi": {
+      "sha256": "42189d12179059cf03d92a43c57dc242f35ac7c44cb4196c375b9c2e9654b39f",
+      "source": "sklearn-stubs/decomposition/_incremental_pca.pyi"
+    },
+    "sklearn/decomposition/_kernel_pca.pyi": {
+      "sha256": "8e78f44044511144e3c1876176c6a4c48be89e02ae076914cc40cc00d7514a60",
+      "source": "sklearn-stubs/decomposition/_kernel_pca.pyi"
+    },
+    "sklearn/decomposition/_lda.pyi": {
+      "sha256": "671224de4c448b5c8ba6577df2dc4b6ff2ce3b5086c2d8c28360ceed6fffdf15",
+      "source": "sklearn-stubs/decomposition/_lda.pyi"
+    },
+    "sklearn/decomposition/_nmf.pyi": {
+      "sha256": "aae4efd8c6ee7cc28e62f398a88ec6c898f7988aca013f13b32ae715e2b782fb",
+      "source": "sklearn-stubs/decomposition/_nmf.pyi"
+    },
+    "sklearn/decomposition/_pca.pyi": {
+      "sha256": "90a95b64ef6dfb8fe355e6fb3c31f86f01ff435da60b069c211f27ebb31922c2",
+      "source": "sklearn-stubs/decomposition/_pca.pyi"
+    },
+    "sklearn/decomposition/_sparse_pca.pyi": {
+      "sha256": "847d523e5ae871ce794f122ba2adc7bb13bfd62bdfba9f0ec087a5161e0b324a",
+      "source": "sklearn-stubs/decomposition/_sparse_pca.pyi"
+    },
+    "sklearn/decomposition/_truncated_svd.pyi": {
+      "sha256": "8b77928f17e1cdb9f1684b7364a4b6cfcc27a0e050e1f429731be3ebcdc13e2a",
+      "source": "sklearn-stubs/decomposition/_truncated_svd.pyi"
+    },
+    "sklearn/discriminant_analysis.pyi": {
+      "sha256": "8c4a7bfae06f495a2904d70cc7d1493f68ac308bd480ae21c1842726dc876a56",
+      "source": "sklearn-stubs/discriminant_analysis.pyi"
+    },
+    "sklearn/dummy.pyi": {
+      "sha256": "92f8b5b024230a3f07e9fb3f0454ab12252352b09d638bb317528a927c91911f",
+      "source": "sklearn-stubs/dummy.pyi"
+    },
+    "sklearn/ensemble/__init__.pyi": {
+      "sha256": "7c606a82faaf83cb307f85978f96e4dab38e272294c66d997fa86981d92815fb",
+      "source": "sklearn-stubs/ensemble/__init__.pyi"
+    },
+    "sklearn/ensemble/_bagging.pyi": {
+      "sha256": "5c1ca07cfcbb9b271b344653bf5e90476af7f60c9eabb4cf37de6ce70f76d978",
+      "source": "sklearn-stubs/ensemble/_bagging.pyi"
+    },
+    "sklearn/ensemble/_base.pyi": {
+      "sha256": "78a0df09a78a22a1430c95580cf4adea256f297af993aa2d754af92c5515391e",
+      "source": "sklearn-stubs/ensemble/_base.pyi"
+    },
+    "sklearn/ensemble/_forest.pyi": {
+      "sha256": "2817e53cf2b6f6d7b505cf73e9092906b8e0470eee4b2820c08846f09cc92590",
+      "source": "sklearn-stubs/ensemble/_forest.pyi"
+    },
+    "sklearn/ensemble/_gb.pyi": {
+      "sha256": "4008c8d694f3d7a315581a66225be8263d4826481587e55823b973a298ef811e",
+      "source": "sklearn-stubs/ensemble/_gb.pyi"
+    },
+    "sklearn/ensemble/_gb_losses.pyi": {
+      "sha256": "c39b1da6e94ad942cd9097aa99b642b49b012453c89ac246bb6d5779c047b5a0",
+      "source": "sklearn-stubs/ensemble/_gb_losses.pyi"
+    },
+    "sklearn/ensemble/_hist_gradient_boosting/binning.pyi": {
+      "sha256": "c960a97604a8d6bb413627e1f96c20c3b49f600e1299078a597eb3b3acfbee43",
+      "source": "sklearn-stubs/ensemble/_hist_gradient_boosting/binning.pyi"
+    },
+    "sklearn/ensemble/_hist_gradient_boosting/gradient_boosting.pyi": {
+      "sha256": "7a4a31bebfbc4a8d71b0bb3ad1413323ed68d81d2cc3d28d71d34e6f08d709cb",
+      "source": "sklearn-stubs/ensemble/_hist_gradient_boosting/gradient_boosting.pyi"
+    },
+    "sklearn/ensemble/_hist_gradient_boosting/grower.pyi": {
+      "sha256": "33d4821a077514e9302b8ace96a650fe1d9b350f09e6a919c25d2a05cc0de087",
+      "source": "sklearn-stubs/ensemble/_hist_gradient_boosting/grower.pyi"
+    },
+    "sklearn/ensemble/_hist_gradient_boosting/predictor.pyi": {
+      "sha256": "b4e44804fcd8b09162f1706dd847bdfb9104c76bda0793ded63df0f62c7dbc53",
+      "source": "sklearn-stubs/ensemble/_hist_gradient_boosting/predictor.pyi"
+    },
+    "sklearn/ensemble/_iforest.pyi": {
+      "sha256": "bee611a5a59dc3052bc820c15ff57cd7cdada62e84cfc9982e92e83680979ac0",
+      "source": "sklearn-stubs/ensemble/_iforest.pyi"
+    },
+    "sklearn/ensemble/_stacking.pyi": {
+      "sha256": "d4df2740cb27f03973ea40be85d05a0ae051e03bd5df3b8d5f07083b8b3a3033",
+      "source": "sklearn-stubs/ensemble/_stacking.pyi"
+    },
+    "sklearn/ensemble/_voting.pyi": {
+      "sha256": "d64f1e6dab0331e4baafcae01af576256611c44f62656d24e776d6c6720f6101",
+      "source": "sklearn-stubs/ensemble/_voting.pyi"
+    },
+    "sklearn/ensemble/_weight_boosting.pyi": {
+      "sha256": "8e88bfa77e967150238a9c9de21f02c0a685b3375853e1105912e8fd6f796163",
+      "source": "sklearn-stubs/ensemble/_weight_boosting.pyi"
+    },
+    "sklearn/experimental/enable_halving_search_cv.pyi": {
+      "sha256": "db68fe89083bf7be6bc2740a83fb056f4f4b6d1c89a3feb9abfaba34d60d0517",
+      "source": "sklearn-stubs/experimental/enable_halving_search_cv.pyi"
+    },
+    "sklearn/experimental/enable_iterative_imputer.pyi": {
+      "sha256": "37e1b54b8d772b3200770153b42f55234782b752f4552ca894e0ea181792a101",
+      "source": "sklearn-stubs/experimental/enable_iterative_imputer.pyi"
+    },
+    "sklearn/externals/_lobpcg.pyi": {
+      "sha256": "3dd33d72010f903be96af26fa4567be15b68e937ef313aa3e26e6c7c9d63a5e1",
+      "source": "sklearn-stubs/externals/_lobpcg.pyi"
+    },
+    "sklearn/feature_extraction/__init__.pyi": {
+      "sha256": "a1850196b6244754c768e9a3bf2415911cc2d4225516b1dfe3afc6a8cff48d41",
+      "source": "sklearn-stubs/feature_extraction/__init__.pyi"
+    },
+    "sklearn/feature_extraction/_dict_vectorizer.pyi": {
+      "sha256": "c74d612800958d4ee2b9358efdcdb575f4a952814a6b6b0bdf9e06185fc7bc07",
+      "source": "sklearn-stubs/feature_extraction/_dict_vectorizer.pyi"
+    },
+    "sklearn/feature_extraction/_hash.pyi": {
+      "sha256": "2e0d6f47e7f1e0e99f87e9f4cc3ec4f5b9b85a200b902d8be946d27f168f0c42",
+      "source": "sklearn-stubs/feature_extraction/_hash.pyi"
+    },
+    "sklearn/feature_extraction/image.pyi": {
+      "sha256": "afc2e2ed9d020ce778c0921d13dd5b09584deb59a98cfb91f08cc6366c3e9a47",
+      "source": "sklearn-stubs/feature_extraction/image.pyi"
+    },
+    "sklearn/feature_extraction/text.pyi": {
+      "sha256": "402d47bae27cad1b8c944213b982d7b85bed47dfe48db38a8d740db96adf3327",
+      "source": "sklearn-stubs/feature_extraction/text.pyi"
+    },
+    "sklearn/feature_selection/__init__.pyi": {
+      "sha256": "d945636c351f012dc9b2999d8387abc47159acda1d910e815c3c754db9f46748",
+      "source": "sklearn-stubs/feature_selection/__init__.pyi"
+    },
+    "sklearn/feature_selection/_base.pyi": {
+      "sha256": "f601744900b5dad69ee485eb98b349ddf9d9e3bb17e3de746b37c58f340cb06a",
+      "source": "sklearn-stubs/feature_selection/_base.pyi"
+    },
+    "sklearn/feature_selection/_from_model.pyi": {
+      "sha256": "314147529049cdf57f464f02b18740d6b31116d5b2976a049f1df13ccdd26649",
+      "source": "sklearn-stubs/feature_selection/_from_model.pyi"
+    },
+    "sklearn/feature_selection/_mutual_info.pyi": {
+      "sha256": "9434ce96f3c46ce1b123f13738b1a1b5f6f5e4fd73d50a95c929aa375b233a5f",
+      "source": "sklearn-stubs/feature_selection/_mutual_info.pyi"
+    },
+    "sklearn/feature_selection/_rfe.pyi": {
+      "sha256": "8405e48cda164536de2a5cc04dfb7854969a4d7965785dda57dc586dba4f21c0",
+      "source": "sklearn-stubs/feature_selection/_rfe.pyi"
+    },
+    "sklearn/feature_selection/_sequential.pyi": {
+      "sha256": "88bc46e0f0233a5e69616e81d44dc6256b87f1775e6ec2e667d658056d86bf1c",
+      "source": "sklearn-stubs/feature_selection/_sequential.pyi"
+    },
+    "sklearn/feature_selection/_univariate_selection.pyi": {
+      "sha256": "0407bc6718b0f8d758c34922a16cbadaa5d118d2f2a670044d05ca3578eb8980",
+      "source": "sklearn-stubs/feature_selection/_univariate_selection.pyi"
+    },
+    "sklearn/feature_selection/_variance_threshold.pyi": {
+      "sha256": "ac7a096fee4f36cc3331c5e52a99234dd7ae6884a271a3ccaa85c65c65bf1536",
+      "source": "sklearn-stubs/feature_selection/_variance_threshold.pyi"
+    },
+    "sklearn/gaussian_process/__init__.pyi": {
+      "sha256": "6471702bc39cab769ccb7f61011c8a8bf3b9f4a7b47a3cae12e5f76f43239e76",
+      "source": "sklearn-stubs/gaussian_process/__init__.pyi"
+    },
+    "sklearn/gaussian_process/_gpc.pyi": {
+      "sha256": "dd5701dec36bc7c343796fb4882437f6ea717ea2d3272e9a6189f83b1cc12e97",
+      "source": "sklearn-stubs/gaussian_process/_gpc.pyi"
+    },
+    "sklearn/gaussian_process/_gpr.pyi": {
+      "sha256": "630ef165bd538f2482d78461dd4aba871a2657a31e5d7994d02231d93ea6bf49",
+      "source": "sklearn-stubs/gaussian_process/_gpr.pyi"
+    },
+    "sklearn/gaussian_process/kernels.pyi": {
+      "sha256": "87cf4d9bf76197f3f66fa2052acd13c4f306dcd0cfb1045a1a67f8cbc3479a66",
+      "source": "sklearn-stubs/gaussian_process/kernels.pyi"
+    },
+    "sklearn/impute/__init__.pyi": {
+      "sha256": "6ad6943b99853639aa8dc34b8157618008480b37f3fdef385d759c4ec020760a",
+      "source": "sklearn-stubs/impute/__init__.pyi"
+    },
+    "sklearn/impute/_base.pyi": {
+      "sha256": "884b53fd6ba17045c1107941a800682c640af9d9ee3f10d3c9008ea1c9aacf85",
+      "source": "sklearn-stubs/impute/_base.pyi"
+    },
+    "sklearn/impute/_iterative.pyi": {
+      "sha256": "ab063182e575d2fa539a1b6eba862b1b60e740a70ed217c4cd6dec0fffd90842",
+      "source": "sklearn-stubs/impute/_iterative.pyi"
+    },
+    "sklearn/impute/_knn.pyi": {
+      "sha256": "3c74db42b17ccbbb5b4d29c40963383ab649e728040f8782ece9833a348d86f8",
+      "source": "sklearn-stubs/impute/_knn.pyi"
+    },
+    "sklearn/inspection/__init__.pyi": {
+      "sha256": "7f2afb8ae6886325784b95707c407b56bcd862d7fbaefb2ea4b8423dbfd5e507",
+      "source": "sklearn-stubs/inspection/__init__.pyi"
+    },
+    "sklearn/inspection/_partial_dependence.pyi": {
+      "sha256": "8b33531d994b59bd2e611ed28939a3c1b0ad359cdac68a6f9431090282ae9d24",
+      "source": "sklearn-stubs/inspection/_partial_dependence.pyi"
+    },
+    "sklearn/inspection/_permutation_importance.pyi": {
+      "sha256": "d57e84c1bebd5dc14c8d11931c1ca96a58061e165b9961eb8ea04a7a62950382",
+      "source": "sklearn-stubs/inspection/_permutation_importance.pyi"
+    },
+    "sklearn/inspection/_plot/decision_boundary.pyi": {
+      "sha256": "4018aa2025a7757dd9dc24dfcbb3e142a5ffb8b5a0c2d0633d003b59aa55d2ef",
+      "source": "sklearn-stubs/inspection/_plot/decision_boundary.pyi"
+    },
+    "sklearn/inspection/_plot/partial_dependence.pyi": {
+      "sha256": "337f8efe07a2e9e2bebf01f39c1bd05a4134f54660f6431e2b0228802eb1a284",
+      "source": "sklearn-stubs/inspection/_plot/partial_dependence.pyi"
+    },
+    "sklearn/isotonic.pyi": {
+      "sha256": "d9197e04def8b8f46fe4547a231ab3ef1343df6114d4b804a9a130ec0f511a2e",
+      "source": "sklearn-stubs/isotonic.pyi"
+    },
+    "sklearn/kernel_approximation.pyi": {
+      "sha256": "70bcfd0d989e54e27cf2fbd009311d809b83b9a4419a1a1c4f8460727515d236",
+      "source": "sklearn-stubs/kernel_approximation.pyi"
+    },
+    "sklearn/kernel_ridge.pyi": {
+      "sha256": "4bd5cafef2f9536dd0a05eb16e13b63f1f557e47a6822231572740b435d92715",
+      "source": "sklearn-stubs/kernel_ridge.pyi"
+    },
+    "sklearn/linear_model/__init__.pyi": {
+      "sha256": "8249ae31ba79e684c5dcc8af4b4fa36fee132008c88a19af205648d8aa51224e",
+      "source": "sklearn-stubs/linear_model/__init__.pyi"
+    },
+    "sklearn/linear_model/_base.pyi": {
+      "sha256": "1838836339aca45f7c1478ffc38b52819d66314ba811f7cef1bda57506608968",
+      "source": "sklearn-stubs/linear_model/_base.pyi"
+    },
+    "sklearn/linear_model/_bayes.pyi": {
+      "sha256": "6096a0218defbe53a3cd9a1da57c099248fe11f667cbbbb4bc112702445f6bae",
+      "source": "sklearn-stubs/linear_model/_bayes.pyi"
+    },
+    "sklearn/linear_model/_coordinate_descent.pyi": {
+      "sha256": "30446badfa5d7e5322b3e817568255c0366a0838f61807b8c2f5d912be1e43e9",
+      "source": "sklearn-stubs/linear_model/_coordinate_descent.pyi"
+    },
+    "sklearn/linear_model/_glm/__init__.pyi": {
+      "sha256": "3801134ec6415acb719bb778f38c2cbfcb016f3395a418dbe6dd1b28d561f39d",
+      "source": "sklearn-stubs/linear_model/_glm/__init__.pyi"
+    },
+    "sklearn/linear_model/_glm/_newton_solver.pyi": {
+      "sha256": "e1c9ee9aa4601f902dd27f82f0687b3ba5b275a863e15a7de9be35ab4884991d",
+      "source": "sklearn-stubs/linear_model/_glm/_newton_solver.pyi"
+    },
+    "sklearn/linear_model/_glm/glm.pyi": {
+      "sha256": "864d1f8f487cffae87f44c78a1b75f579211182d0aab445c25a5e920a33cbed5",
+      "source": "sklearn-stubs/linear_model/_glm/glm.pyi"
+    },
+    "sklearn/linear_model/_huber.pyi": {
+      "sha256": "2dd9c8b5a465a0b26c8de936eb8a58bf677f53a233e547137a9713652b4560ee",
+      "source": "sklearn-stubs/linear_model/_huber.pyi"
+    },
+    "sklearn/linear_model/_least_angle.pyi": {
+      "sha256": "45d638811199ded251ee0f0a42676088d7aa6b1814fc7cd8db4028a724c65e66",
+      "source": "sklearn-stubs/linear_model/_least_angle.pyi"
+    },
+    "sklearn/linear_model/_linear_loss.pyi": {
+      "sha256": "905ad0e3a7747a636a2924ee163f8cba375b20dbcb38f0c832875596924f25b1",
+      "source": "sklearn-stubs/linear_model/_linear_loss.pyi"
+    },
+    "sklearn/linear_model/_logistic.pyi": {
+      "sha256": "04a98f54e0c680a8bdb82e9f07858bf1cab45a1eb2045cfbac53a307a4074d02",
+      "source": "sklearn-stubs/linear_model/_logistic.pyi"
+    },
+    "sklearn/linear_model/_omp.pyi": {
+      "sha256": "62a01d36329aa2d3d5fcddf57d73449027599d64b0a1e9bd546fb63090952b24",
+      "source": "sklearn-stubs/linear_model/_omp.pyi"
+    },
+    "sklearn/linear_model/_passive_aggressive.pyi": {
+      "sha256": "0c2f21da0cf910d0cba2d0acf9da3cde1b0f9df4f418a546722f9a61d99d6605",
+      "source": "sklearn-stubs/linear_model/_passive_aggressive.pyi"
+    },
+    "sklearn/linear_model/_perceptron.pyi": {
+      "sha256": "6016af9ce112bc595aa8f396eb6610e5b8f7da3e6b9e82a1aedc4dd089bb4fd5",
+      "source": "sklearn-stubs/linear_model/_perceptron.pyi"
+    },
+    "sklearn/linear_model/_quantile.pyi": {
+      "sha256": "b3f6fff801300b149d96d634078a20771671f6dd3b966f0084c3194720763f4f",
+      "source": "sklearn-stubs/linear_model/_quantile.pyi"
+    },
+    "sklearn/linear_model/_ransac.pyi": {
+      "sha256": "2ce315ef3a79ce990b37e4a1af4ff5914505f597404682f91c69ca20cca44cf2",
+      "source": "sklearn-stubs/linear_model/_ransac.pyi"
+    },
+    "sklearn/linear_model/_ridge.pyi": {
+      "sha256": "e0cd3a3ac84932309a0e5d4599f9e43686cd0812dbab55078e58e24c6143f49d",
+      "source": "sklearn-stubs/linear_model/_ridge.pyi"
+    },
+    "sklearn/linear_model/_sag.pyi": {
+      "sha256": "956e7b74dd3332c086afca5a392058cb7982ac7dd3e2a421f3c49216f4e77ae5",
+      "source": "sklearn-stubs/linear_model/_sag.pyi"
+    },
+    "sklearn/linear_model/_stochastic_gradient.pyi": {
+      "sha256": "82d5c94c18f63ea575ddc3bb49b84eb3cca91765bdbe12739b2adb87ae895036",
+      "source": "sklearn-stubs/linear_model/_stochastic_gradient.pyi"
+    },
+    "sklearn/linear_model/_theil_sen.pyi": {
+      "sha256": "3e69aed592757932f0c28d9c741ea87018b6309ed44426c266cdb73dbe71320f",
+      "source": "sklearn-stubs/linear_model/_theil_sen.pyi"
+    },
+    "sklearn/manifold/__init__.pyi": {
+      "sha256": "5718e3ea8d4a25040ad17ee5613396a2b91007ecf6c3c2b3dbc469cb81b8b629",
+      "source": "sklearn-stubs/manifold/__init__.pyi"
+    },
+    "sklearn/manifold/_isomap.pyi": {
+      "sha256": "7efc36c70aeb881abe3811b71d3d2917eacd269a90114cc1e5834698c7c94e85",
+      "source": "sklearn-stubs/manifold/_isomap.pyi"
+    },
+    "sklearn/manifold/_locally_linear.pyi": {
+      "sha256": "f55b7cbe07a4b4eaf05c1d411770596bc60e7f9c03dd0d53152427b7bd394ef0",
+      "source": "sklearn-stubs/manifold/_locally_linear.pyi"
+    },
+    "sklearn/manifold/_mds.pyi": {
+      "sha256": "ba549c927ea6f943c6178a2bd88d24cd81c2bbe6c511048f56738756dd13c4fb",
+      "source": "sklearn-stubs/manifold/_mds.pyi"
+    },
+    "sklearn/manifold/_spectral_embedding.pyi": {
+      "sha256": "398abf30e54d9faea83c13645f3072182d76bf4d7471f5a6fff3c8f65aac882c",
+      "source": "sklearn-stubs/manifold/_spectral_embedding.pyi"
+    },
+    "sklearn/manifold/_t_sne.pyi": {
+      "sha256": "3602cd9342e9c64f1a83150b78892c608ed906d223114ff9beee1bc91822f4e9",
+      "source": "sklearn-stubs/manifold/_t_sne.pyi"
+    },
+    "sklearn/metrics/__init__.pyi": {
+      "sha256": "2d31367ff6259303d7ce70067498e02487abfa24b952c1543c26f41c7081059a",
+      "source": "sklearn-stubs/metrics/__init__.pyi"
+    },
+    "sklearn/metrics/_classification.pyi": {
+      "sha256": "48ab7889840799d3ed3f44a7f7cdcb00cb22ce33fb381ccc80d913e65eccd71d",
+      "source": "sklearn-stubs/metrics/_classification.pyi"
+    },
+    "sklearn/metrics/_plot/confusion_matrix.pyi": {
+      "sha256": "186e3903f4e45480cdffe217124be034ccf3a1811e99120bde7cb43dfbdb5114",
+      "source": "sklearn-stubs/metrics/_plot/confusion_matrix.pyi"
+    },
+    "sklearn/metrics/_plot/det_curve.pyi": {
+      "sha256": "35870fbdc2a417dad719ed3b1697e1136d2c998bd3226eea9dcf791f45d190f6",
+      "source": "sklearn-stubs/metrics/_plot/det_curve.pyi"
+    },
+    "sklearn/metrics/_plot/precision_recall_curve.pyi": {
+      "sha256": "fb3aec087406f43f8657dbeb822aa964d3645b0f0fca66676e736539e5c07123",
+      "source": "sklearn-stubs/metrics/_plot/precision_recall_curve.pyi"
+    },
+    "sklearn/metrics/_plot/regression.pyi": {
+      "sha256": "21468dc6d5e6bc0dcf181964b4369ecba112c80a7f8b77929775a1188ad52f21",
+      "source": "sklearn-stubs/metrics/_plot/regression.pyi"
+    },
+    "sklearn/metrics/_plot/roc_curve.pyi": {
+      "sha256": "7e126a13f80d5d5bdbb5fadd5af27087b6e8609cc1f29544fad074029851eb06",
+      "source": "sklearn-stubs/metrics/_plot/roc_curve.pyi"
+    },
+    "sklearn/metrics/_ranking.pyi": {
+      "sha256": "f0519cbbbe121e83ed03c5258057084f10eeea530aafc8a71862dfc8c4c13c68",
+      "source": "sklearn-stubs/metrics/_ranking.pyi"
+    },
+    "sklearn/metrics/_regression.pyi": {
+      "sha256": "1db0fc0d5b82bf60281293c6269e54d5942a99150ca4626fc3f703c85aecf351",
+      "source": "sklearn-stubs/metrics/_regression.pyi"
+    },
+    "sklearn/metrics/_scorer.pyi": {
+      "sha256": "a63307b39b4a9f17c0957b2ab2506135a463387d57ad9ab56ed14556879f0079",
+      "source": "sklearn-stubs/metrics/_scorer.pyi"
+    },
+    "sklearn/metrics/cluster/__init__.pyi": {
+      "sha256": "477fc7abad11c3e682e2f4fab5bf17b4d70f1586c859ff916e833175d8a280dc",
+      "source": "sklearn-stubs/metrics/cluster/__init__.pyi"
+    },
+    "sklearn/metrics/cluster/_bicluster.pyi": {
+      "sha256": "2aaee62bd885e51aa6ca95f738e79455fa07bdf545b900690751f7a49f23b136",
+      "source": "sklearn-stubs/metrics/cluster/_bicluster.pyi"
+    },
+    "sklearn/metrics/cluster/_supervised.pyi": {
+      "sha256": "b29b733fb274ddd4c8a64c2bfdc48755ea01aa5953adc85ae7b8c2a537934c92",
+      "source": "sklearn-stubs/metrics/cluster/_supervised.pyi"
+    },
+    "sklearn/metrics/pairwise.pyi": {
+      "sha256": "2c4d6081f710d679239e76dfb7a1a160652a138dfa892a1d24fae3382587bc4d",
+      "source": "sklearn-stubs/metrics/pairwise.pyi"
+    },
+    "sklearn/mixture/__init__.pyi": {
+      "sha256": "5fd8c4944d1a704059743bdef61edef3ad911f4d8bd85676cc463caf01bd4696",
+      "source": "sklearn-stubs/mixture/__init__.pyi"
+    },
+    "sklearn/mixture/_base.pyi": {
+      "sha256": "214bb38ba1a8a772c4247094fa9339888e9fc7503bfc58209813659eff2b2e70",
+      "source": "sklearn-stubs/mixture/_base.pyi"
+    },
+    "sklearn/mixture/_bayesian_mixture.pyi": {
+      "sha256": "48c097b84439aee1e1ecb51b31d0f05af7e54ab9d9d773d3250d63cbb5f0842a",
+      "source": "sklearn-stubs/mixture/_bayesian_mixture.pyi"
+    },
+    "sklearn/mixture/_gaussian_mixture.pyi": {
+      "sha256": "070d459f44097a9bc5f9be9ed5472ef74760e4c3ac1243619350962fa82e2dae",
+      "source": "sklearn-stubs/mixture/_gaussian_mixture.pyi"
+    },
+    "sklearn/model_selection/__init__.pyi": {
+      "sha256": "76c009cd6fb5929d4edd57fb47799bb5bd998e8f8a23f01a34f773b9a0027fcf",
+      "source": "sklearn-stubs/model_selection/__init__.pyi"
+    },
+    "sklearn/model_selection/_plot.pyi": {
+      "sha256": "dcaaa1379885fbe739df5b8bcd791074176825bfd7662b0a22112a22c7684ba4",
+      "source": "sklearn-stubs/model_selection/_plot.pyi"
+    },
+    "sklearn/model_selection/_search.pyi": {
+      "sha256": "b918f0b69b88da5929b65d9a785f28eccd95309c628a30c76e829431e2b3bdf3",
+      "source": "sklearn-stubs/model_selection/_search.pyi"
+    },
+    "sklearn/model_selection/_search_successive_halving.pyi": {
+      "sha256": "4e048f3d036e22576dd218ca3b6e50752747b39178060171f22818247b942bcf",
+      "source": "sklearn-stubs/model_selection/_search_successive_halving.pyi"
+    },
+    "sklearn/model_selection/_split.pyi": {
+      "sha256": "ea02af2a005e5f3f19eda7ac9fbe7bdace8b2f6203866984aa1dcfb2ca2d29fd",
+      "source": "sklearn-stubs/model_selection/_split.pyi"
+    },
+    "sklearn/model_selection/_validation.pyi": {
+      "sha256": "3ee98579b8f225584a20ff74c44003514bc58847caaf0d06dd6eccc493c4e701",
+      "source": "sklearn-stubs/model_selection/_validation.pyi"
+    },
+    "sklearn/multiclass.pyi": {
+      "sha256": "a30e9c9b6be107ddadd6ee90d74b364829c4a844ac3dbc36f7d68d56759b3ddd",
+      "source": "sklearn-stubs/multiclass.pyi"
+    },
+    "sklearn/multioutput.pyi": {
+      "sha256": "9e864ceff7ed7a88e50cbb357a093b08241842a68a105003bfa0aa5ea3e7d906",
+      "source": "sklearn-stubs/multioutput.pyi"
+    },
+    "sklearn/naive_bayes.pyi": {
+      "sha256": "d6cc4e8f01ad4c76e9acccc7a615b8fa74446a970c77306e9ec2d987465461a0",
+      "source": "sklearn-stubs/naive_bayes.pyi"
+    },
+    "sklearn/neighbors/__init__.pyi": {
+      "sha256": "7e5daff055575ebfb16b58852b2943b7c02779363c2904c5d9e874470c9f95a0",
+      "source": "sklearn-stubs/neighbors/__init__.pyi"
+    },
+    "sklearn/neighbors/_base.pyi": {
+      "sha256": "c5f5215b67be03d5c2e978e1ec9d145f5bcf2af48c4ec6093832d029fbd88ec7",
+      "source": "sklearn-stubs/neighbors/_base.pyi"
+    },
+    "sklearn/neighbors/_classification.pyi": {
+      "sha256": "4e3f59cc60a6cc97592c269454df40e751781be71808f5ea7ef274e0d839dc03",
+      "source": "sklearn-stubs/neighbors/_classification.pyi"
+    },
+    "sklearn/neighbors/_graph.pyi": {
+      "sha256": "d2b6fe6c4bef7d77aedd37bd14175875e58255fa8f4b8d59a8eae73c1b35e595",
+      "source": "sklearn-stubs/neighbors/_graph.pyi"
+    },
+    "sklearn/neighbors/_kde.pyi": {
+      "sha256": "4dae203a3f269cec029f74d7db775be07de1cf0882a9663c2857beb3fe7516c7",
+      "source": "sklearn-stubs/neighbors/_kde.pyi"
+    },
+    "sklearn/neighbors/_lof.pyi": {
+      "sha256": "d8333397a2d95f0dcb68e54b145ff06d8694114725825c6681ce74452fb19eae",
+      "source": "sklearn-stubs/neighbors/_lof.pyi"
+    },
+    "sklearn/neighbors/_nca.pyi": {
+      "sha256": "badebe7df769343d754aa65bc75726dc4a6b52c91280670ab03e91518a5ca38d",
+      "source": "sklearn-stubs/neighbors/_nca.pyi"
+    },
+    "sklearn/neighbors/_nearest_centroid.pyi": {
+      "sha256": "97810234f9c97f7fd12a0bb0bc96eb6c0c89adb375fb6059cb93d30a671127b0",
+      "source": "sklearn-stubs/neighbors/_nearest_centroid.pyi"
+    },
+    "sklearn/neighbors/_regression.pyi": {
+      "sha256": "8be5cb89c91e2cd271f8e09da39762f0d468fb72eebf05660860bc0a98af1e37",
+      "source": "sklearn-stubs/neighbors/_regression.pyi"
+    },
+    "sklearn/neighbors/_unsupervised.pyi": {
+      "sha256": "5d3e9877ee33ca2f19f1190ea7109b719108a8e5a6900ab124aaf3f80ed8fa1a",
+      "source": "sklearn-stubs/neighbors/_unsupervised.pyi"
+    },
+    "sklearn/neural_network/__init__.pyi": {
+      "sha256": "fa773dc96ca97648fe6808946dee6b949e171fd923cb72368de6c6a05457e5f6",
+      "source": "sklearn-stubs/neural_network/__init__.pyi"
+    },
+    "sklearn/neural_network/_base.pyi": {
+      "sha256": "70680e772616fc3608e06825ee18e3e740a6381a4712afbec1823394ae4b7679",
+      "source": "sklearn-stubs/neural_network/_base.pyi"
+    },
+    "sklearn/neural_network/_multilayer_perceptron.pyi": {
+      "sha256": "1755cefda36aa0a5b4a5309760a3355a0e291da815dc7dd5ba43acf746dc1d2e",
+      "source": "sklearn-stubs/neural_network/_multilayer_perceptron.pyi"
+    },
+    "sklearn/neural_network/_rbm.pyi": {
+      "sha256": "64c426ecfbf07fb62c089e118f628f3b5c30eae83382d9623964ef4c5f1ec091",
+      "source": "sklearn-stubs/neural_network/_rbm.pyi"
+    },
+    "sklearn/neural_network/_stochastic_optimizers.pyi": {
+      "sha256": "4582b3ae72630b410801a0b0c8f410c502c1817e16071e7a31fb0a3e9325098a",
+      "source": "sklearn-stubs/neural_network/_stochastic_optimizers.pyi"
+    },
+    "sklearn/pipeline.pyi": {
+      "sha256": "bbc7e2a93c14709258ed7e9bfb2f9299c25a01191ffa5c564b521062b5905854",
+      "source": "sklearn-stubs/pipeline.pyi"
+    },
+    "sklearn/preprocessing/__init__.pyi": {
+      "sha256": "a21b9393e6ded4cb792a1a51b0cdcc7f645b3479ab48b899db3fb81f03c01184",
+      "source": "sklearn-stubs/preprocessing/__init__.pyi"
+    },
+    "sklearn/preprocessing/_data.pyi": {
+      "sha256": "bc2255ac58c728d4c1da13274370f5cb9598cea593817b207df728624f7e3066",
+      "source": "sklearn-stubs/preprocessing/_data.pyi"
+    },
+    "sklearn/preprocessing/_discretization.pyi": {
+      "sha256": "d8cfc359b78f99f0d661d79ac62ada54feb24490c35bfb6be9486fd366d5b78f",
+      "source": "sklearn-stubs/preprocessing/_discretization.pyi"
+    },
+    "sklearn/preprocessing/_encoders.pyi": {
+      "sha256": "b66d98f74bf539c49f0ecb492cf9815d3a2019d40554ed9b0c9691551b1804ae",
+      "source": "sklearn-stubs/preprocessing/_encoders.pyi"
+    },
+    "sklearn/preprocessing/_function_transformer.pyi": {
+      "sha256": "e2eb2a383c0a8ae6dc699b21ace2bc222fb8ba38d6daa1346e25ac18fd315072",
+      "source": "sklearn-stubs/preprocessing/_function_transformer.pyi"
+    },
+    "sklearn/preprocessing/_label.pyi": {
+      "sha256": "5d6dc82d7656a37eba4f01cb1cee7c908658937660996a6bada9014e10d580bc",
+      "source": "sklearn-stubs/preprocessing/_label.pyi"
+    },
+    "sklearn/preprocessing/_polynomial.pyi": {
+      "sha256": "ca054c3f6076989dbc935c0b939564ac7a8518d488fc85854d5edc8246d4f249",
+      "source": "sklearn-stubs/preprocessing/_polynomial.pyi"
+    },
+    "sklearn/preprocessing/_target_encoder.pyi": {
+      "sha256": "8672d6dc308dd5433dd827df5e4dd3ed1d1d7ae14fb64482ed6cbc530528fc9b",
+      "source": "sklearn-stubs/preprocessing/_target_encoder.pyi"
+    },
+    "sklearn/random_projection.pyi": {
+      "sha256": "f3438864443b27d60a3bb87ca39e92b68b4a96ced5cbb08cdbe13bea378dd879",
+      "source": "sklearn-stubs/random_projection.pyi"
+    },
+    "sklearn/semi_supervised/__init__.pyi": {
+      "sha256": "a467efdabcc989284d37fdc74cccfc2302dd35bcaa9086025b0bad1c185511d6",
+      "source": "sklearn-stubs/semi_supervised/__init__.pyi"
+    },
+    "sklearn/semi_supervised/_label_propagation.pyi": {
+      "sha256": "92987ac4535cebbf05b34f8ae518c949ce115f34a64a3c33634c6c6cc0598a4e",
+      "source": "sklearn-stubs/semi_supervised/_label_propagation.pyi"
+    },
+    "sklearn/semi_supervised/_self_training.pyi": {
+      "sha256": "d384aaadf703b5492f03e93cc938ee0d11fcf152c3197d205740524717cb3ca6",
+      "source": "sklearn-stubs/semi_supervised/_self_training.pyi"
+    },
+    "sklearn/svm/__init__.pyi": {
+      "sha256": "001f9fb5fffa8d2ef5128d311f6d21f4c0486b2176ea87eb73f8c25f08d3a5a3",
+      "source": "sklearn-stubs/svm/__init__.pyi"
+    },
+    "sklearn/svm/_base.pyi": {
+      "sha256": "9ffc9a09246131adaa9922b237594ab03b455dd2b30cf7a1ba4392d8601ff6ed",
+      "source": "sklearn-stubs/svm/_base.pyi"
+    },
+    "sklearn/svm/_bounds.pyi": {
+      "sha256": "cdffddcce49f742d02192a4b84099ff152b5b059d191588fd4f5201500c8c699",
+      "source": "sklearn-stubs/svm/_bounds.pyi"
+    },
+    "sklearn/svm/_classes.pyi": {
+      "sha256": "e1449e6dabc1fd79b5c012e2b1d0f4eab8a030ab8950bd2db7a0a26f47da899d",
+      "source": "sklearn-stubs/svm/_classes.pyi"
+    },
+    "sklearn/tree/__init__.pyi": {
+      "sha256": "626d7807f78b31158e60e8ea5a8d045a8909589a76079cc1f11b907de3adcf1c",
+      "source": "sklearn-stubs/tree/__init__.pyi"
+    },
+    "sklearn/tree/_classes.pyi": {
+      "sha256": "c70ad34a8160e77b0e2b951896ef1a8fd49e818ac0ac59d9c6a2953fa3c42c46",
+      "source": "sklearn-stubs/tree/_classes.pyi"
+    },
+    "sklearn/tree/_export.pyi": {
+      "sha256": "2a408c202aa5e5b03e2e92174002b4decaa1f64354649492888185894c8478f5",
+      "source": "sklearn-stubs/tree/_export.pyi"
+    },
+    "sklearn/utils/__init__.pyi": {
+      "sha256": "7ac75b28469fd96cd7c3c71a3c13610be32edf28de2af53d4b5eeab756822b50",
+      "source": "sklearn-stubs/utils/__init__.pyi"
+    },
+    "sklearn/utils/_array_api.pyi": {
+      "sha256": "f70af463b8b636597065f8c127ec0ffaabd90157221554b07ae64f2adf676ea5",
+      "source": "sklearn-stubs/utils/_array_api.pyi"
+    },
+    "sklearn/utils/_estimator_html_repr.pyi": {
+      "sha256": "70724270f730cc54aa4c691df2afdd5877e98e06040674ba661298944bc48418",
+      "source": "sklearn-stubs/utils/_estimator_html_repr.pyi"
+    },
+    "sklearn/utils/_mocking.pyi": {
+      "sha256": "ee53e4e576e4ece961a9a0f3bfa079e3397f36ebeeb9348f18d94c90e518607c",
+      "source": "sklearn-stubs/utils/_mocking.pyi"
+    },
+    "sklearn/utils/_param_validation.pyi": {
+      "sha256": "a8bcad0a1b68bde06af83bda83b26d866960c4766ebb2ee62fb26e8bd984b123",
+      "source": "sklearn-stubs/utils/_param_validation.pyi"
+    },
+    "sklearn/utils/_set_output.pyi": {
+      "sha256": "2fc7358a9477b462f4a31fc885a90d407eb55755167a3074669332afcbe1d22f",
+      "source": "sklearn-stubs/utils/_set_output.pyi"
+    },
+    "sklearn/utils/_testing.pyi": {
+      "sha256": "fa88b3b297a38b245fccc7e34a8d5d36f168e9e4ad655ea2f0feba2d859cee35",
+      "source": "sklearn-stubs/utils/_testing.pyi"
+    },
+    "sklearn/utils/class_weight.pyi": {
+      "sha256": "cb4444d36d352ad6efbe1af385806277bbf7dc16d0e001f24c331f0df86281ee",
+      "source": "sklearn-stubs/utils/class_weight.pyi"
+    },
+    "sklearn/utils/estimator_checks.pyi": {
+      "sha256": "b8495dd0ef0b9db3b4be8da81907d454bc7bcb96c42191c98e0d98a483e077cc",
+      "source": "sklearn-stubs/utils/estimator_checks.pyi"
+    },
+    "sklearn/utils/extmath.pyi": {
+      "sha256": "b830ac2dac1f2e60f25462716b4f6cb925b78adcc119151db71cec0120efea04",
+      "source": "sklearn-stubs/utils/extmath.pyi"
+    },
+    "sklearn/utils/graph.pyi": {
+      "sha256": "e72c827aaacf23c0fee5c9d5b623a549f089b97de92002b1ef637138dfc632d6",
+      "source": "sklearn-stubs/utils/graph.pyi"
+    },
+    "sklearn/utils/metaestimators.pyi": {
+      "sha256": "dc30ad8c30e81ad12ec1e4a8413278519918e5d8655576b0dff8dc5a987e0259",
+      "source": "sklearn-stubs/utils/metaestimators.pyi"
+    },
+    "sklearn/utils/multiclass.pyi": {
+      "sha256": "d97fb5b6827508ef384d42ddd01ec93df1ed138f2397add200db6ed05553d41d",
+      "source": "sklearn-stubs/utils/multiclass.pyi"
+    },
+    "sklearn/utils/parallel.pyi": {
+      "sha256": "3af047ac4df4f3cc31a618cd2204d2a07ea279ce43de3d8ee05945ec00bbff12",
+      "source": "sklearn-stubs/utils/parallel.pyi"
+    },
+    "sklearn/utils/random.pyi": {
+      "sha256": "d5eacf73c69e7eb80f66249d1ba142e794a92b3364904dff38139c91870afa85",
+      "source": "sklearn-stubs/utils/random.pyi"
+    },
+    "sklearn/utils/sparsefuncs.pyi": {
+      "sha256": "7128920bd253e6921e8d5df644c15421149666f45380a46ae8512fc4c33e8e0c",
+      "source": "sklearn-stubs/utils/sparsefuncs.pyi"
+    },
+    "sklearn/utils/stats.pyi": {
+      "sha256": "a9fdc1a0f454bd25c0ea5449ee0cccc4a5c3445e9bc4b1b2f6f7590491281994",
+      "source": "sklearn-stubs/utils/stats.pyi"
+    },
+    "sklearn/utils/validation.pyi": {
+      "sha256": "ad4f3f595353a078d70b97d78f501a823be5fcdaf3246b75245cbf03c5169305",
+      "source": "sklearn-stubs/utils/validation.pyi"
+    }
+  },
+  "versions": {
+    "matplotlib": "3.11.2",
+    "scikit-learn-stubs": "0.0.3"
+  }
+}

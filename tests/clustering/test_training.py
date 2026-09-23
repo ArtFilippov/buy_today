@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from sklearn.base import BaseEstimator
+import fixture_types as ft
 
 from buy_today.clustering.models import ModelSnapshot
 from buy_today.clustering.models.temporal import train_temporal
@@ -13,47 +14,76 @@ from buy_today.clustering.training import train_clustering
 from buy_today.schema import ROW_KEY
 
 
-def test_training_roundtrip_and_keyed_alignment(working_frame, write_dataset, tmp_path):
+def test_training_roundtrip_and_keyed_alignment(
+    working_frame: pd.DataFrame, write_dataset: ft.DatasetWriter, tmp_path: ft.Path
+):
     output = tmp_path / "models"
-    paths = train_clustering(write_dataset(working_frame), output, strategy=partial(train_temporal, n_clusters=3))
-    assert set(path.name for path in output.iterdir()) == {"model.joblib", "distance.joblib", "labels.csv"}
+    paths = train_clustering(
+        write_dataset(working_frame), output, strategy=partial(train_temporal, n_clusters=3)
+    )
+    assert set(path.name for path in output.iterdir()) == {
+        "model.joblib",
+        "distance.joblib",
+        "labels.csv",
+    }
     assert paths.model_path.is_absolute()
     model, distance = joblib.load(paths.model_path), joblib.load(paths.distance_path)
     np.testing.assert_array_equal(model.labels_, [0] * 4 + [1] * 4 + [2] * 4)
     assert distance.pairwise(working_frame).shape == (12, 12)
     table = read_labels(paths.labels_path).sample(frac=1, random_state=42)
     table.to_csv(paths.labels_path, index=False)
-    labels, mask = align_assignments(working_frame, read_labels(paths.labels_path), working_frame.iloc[-3:])
+    labels, mask = align_assignments(
+        working_frame, read_labels(paths.labels_path), working_frame.iloc[-3:]
+    )
     np.testing.assert_array_equal(labels, model.labels_)
     np.testing.assert_array_equal(mask, [False] * 9 + [True] * 3)
     # Refit changes all temporal groups and overwrites the three artifacts.
-    train_clustering(write_dataset(working_frame), output, strategy=partial(train_temporal, n_clusters=2))
+    train_clustering(
+        write_dataset(working_frame), output, strategy=partial(train_temporal, n_clusters=2)
+    )
     assert joblib.load(paths.model_path).n_clusters == 2
     assert read_labels(paths.labels_path).cluster_id.nunique() == 2
 
 
-def test_coordinator_delegates_policy_and_can_save_accumulated_labels(working_frame, new_batch, write_dataset, tmp_path):
+def test_coordinator_delegates_policy_and_can_save_accumulated_labels(
+    working_frame: pd.DataFrame,
+    new_batch: pd.DataFrame,
+    write_dataset: ft.DatasetWriter,
+    tmp_path: ft.Path,
+):
     accumulated = pd.concat([working_frame, new_batch], ignore_index=True)
     table = accumulated[list(ROW_KEY)].assign(cluster_id=np.arange(len(accumulated)) % 3)
-    calls = []
+    calls: list[pd.DataFrame] = []
 
-    def retain_previous_state(batch):
+    def retain_previous_state(batch: pd.DataFrame) -> ModelSnapshot:
         calls.append(batch)
         # Neither object has fit/predict; the coordinator only persists them.
         return ModelSnapshot(BaseEstimator(), BaseEstimator(), table)
 
-    paths = train_clustering(write_dataset(new_batch), tmp_path / "model", strategy=retain_previous_state)
+    paths = train_clustering(
+        write_dataset(new_batch), tmp_path / "model", strategy=retain_previous_state
+    )
     pd.testing.assert_frame_equal(calls[0], new_batch)
     pd.testing.assert_frame_equal(read_labels(paths.labels_path), table)
 
 
-@pytest.mark.parametrize(("problem", "message"), [
-    ("missing", "missing=1"), ("extra", "extra=1"), ("duplicate", "Duplicate"),
-    ("float", "integers"), ("null", "missing"), ("columns", "exactly"),
-    ("outside_batch", "outside dataset"), ("duplicate_batch", "duplicate"),
-    ("duplicate_dataset", "duplicate"),
-])
-def test_invalid_assignments_and_batch_keys(working_frame, new_batch, problem, message):
+@pytest.mark.parametrize(
+    ("problem", "message"),
+    [
+        ("missing", "missing=1"),
+        ("extra", "extra=1"),
+        ("duplicate", "Duplicate"),
+        ("float", "integers"),
+        ("null", "missing"),
+        ("columns", "exactly"),
+        ("outside_batch", "outside dataset"),
+        ("duplicate_batch", "duplicate"),
+        ("duplicate_dataset", "duplicate"),
+    ],
+)
+def test_invalid_assignments_and_batch_keys(
+    working_frame: pd.DataFrame, new_batch: pd.DataFrame, problem: str, message: str
+):
     table = working_frame[list(ROW_KEY)].assign(cluster_id=0)
     batch = working_frame.iloc[-2:].copy()
     if problem == "missing":
@@ -78,10 +108,12 @@ def test_invalid_assignments_and_batch_keys(working_frame, new_batch, problem, m
         align_assignments(working_frame, table, batch)
 
 
-def test_invalid_dataset_does_not_call_strategy_or_overwrite(working_frame, write_dataset, tmp_path):
+def test_invalid_dataset_does_not_call_strategy_or_overwrite(
+    working_frame: pd.DataFrame, write_dataset: ft.DatasetWriter, tmp_path: ft.Path
+):
     working_frame.loc[0, "price"] = 0
 
-    def must_not_run(frame):
+    def must_not_run(frame: pd.DataFrame) -> ModelSnapshot:
         raise AssertionError("Bad dataset must be checked first")
 
     with pytest.raises(ValueError, match="цена"):

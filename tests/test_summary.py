@@ -2,153 +2,116 @@
 
 import csv
 from dataclasses import asdict
-import hashlib
 from html.parser import HTMLParser
 import json
 from pathlib import Path
+from typing import Any, IO, override
 from urllib.parse import unquote
 
+import fixture_types as ft
 import pytest
+from summary_fixtures import (
+    digest,
+    drift_report,
+    prepared_stream,
+    save_reports,
+    step_reports,
+    write_json,
+)
 
 from buy_today.pipeline import PipelineConfig, read_completed_steps
 from buy_today.summary import SummaryPaths, report_summary
 
 
-def digest(value):
-    return hashlib.sha256(value).hexdigest()
-
-
-def write_json(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return digest(path.read_bytes())
-
-
-def read_json(path):
+def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def completed_run(tmp_path, *, model="random", count=2):
-    """The same small JSON contracts emitted by pipeline and report writers."""
+def completed_run(tmp_path: Path, *, model: str = "random", count: int = 2) -> Path:
+    """Build the same small JSON contracts emitted by pipeline and report writers.
+
+    Args:
+        tmp_path (Path): Parent directory of the run and prepared source.
+        model (str, default="random"): Ranker identity to record.
+        count (int, default=2): Number of completed steps to create.
+
+    Returns:
+        Path: Directory containing the completed run.
+    """
     run = tmp_path / "запуск ' & <demo>"
-    source = tmp_path / 'stream " & <source>'
-    source.mkdir()
-    batches = []
-    for index in range(2):
-        path = source / f"batch_{index:03d}.csv"
-        path.write_text("product_id\n" + f"p{index}\n" * 12, encoding="utf-8")
-        batches.append({"id": path.stem, "path": str(path), "rows": 12, "sha256": digest(path.read_bytes())})
-    stream_path = source / "manifest.json"
-    stream_hash = write_json(stream_path, {"format_version": 1, "batches": batches})
-    parameters = asdict(PipelineConfig(
-        model=model, initial_users=2, additional_users=1, split_sizes=(3, 2, 1),
-        k=2, svd_n_components=2,
-    ))
+    batches, stream = prepared_stream(tmp_path / 'stream " & <source>')
+    parameters = asdict(
+        PipelineConfig(
+            model=model,
+            initial_users=2,
+            additional_users=1,
+            split_sizes=(3, 2, 1),
+            k=2,
+            svd_n_components=2,
+        )
+    )
     parameters["split_sizes"] = list(parameters["split_sizes"])
-    config_hash = write_json(run / "config.json", {
-        "format_version": 1, "parameters": parameters, "batches": batches,
-        "stream": {"path": str(stream_path), "sha256": stream_hash}, "thread_limit": 1,
-    })
-    state = {"format_version": 1, "config_sha256": config_hash,
-             "next_batch_index": count, "reference_sha256": None, "steps": []}
-    previous_reference = None
+    config_hash = write_json(
+        run / "config.json",
+        {
+            "format_version": 1,
+            "parameters": parameters,
+            "batches": batches,
+            "stream": stream,
+            "thread_limit": 1,
+        },
+    )
+    state: dict[str, Any] = {
+        "format_version": 1,
+        "config_sha256": config_hash,
+        "next_batch_index": count,
+        "reference_sha256": None,
+        "steps": [],
+    }
+    previous_reference: dict[str, Any] = {}
     for index in range(count):
         prefix = f"steps/step_{index:03d}"
-        batch, users, catalog_rows = batches[index], 2 + index, 4 + index
+        batch = batches[index]
         reference_path = run / "reference.csv"
         reference_path.write_text("product_id\n" + "p0\n" * (12 * (index + 1)), encoding="utf-8")
-        reference = {"path": "reference.csv", "sha256": digest(reference_path.read_bytes()),
-                     "rows": 12 * (index + 1)}
-        reference_input = {"path": str(reference_path), "sha256": reference["sha256"]}
-        histories = run / prefix / "histories"
-
-        def identity(name, rows):
-            return {"path": str(histories / f"{name}.csv"), "rows": rows,
-                    "sha256": digest(f"{index}:{name}:{rows}".encode())}
-
-        training = {
-            "format_version": 1, "inputs": {"train": identity("train", users * 3),
-                                             "catalog": identity("catalog", catalog_rows)},
-            "n_users": users, "user_ids_sha256": digest(json.dumps([f"u{i}" for i in range(users)]).encode()),
-            "versions": {"numpy": "2.1.0", "scikit_learn": "1.6.0"},
-            "model": {"file": "model.joblib", "sha256": digest(f"model:{index}".encode()),
-                      "class": f"buy_today.ranking.{model}.{'RandomRanker' if model == 'random' else 'SVDRanker'}",
-                      "parameters": {"random_state": 42}},
+        reference: dict[str, Any] = {
+            "path": "reference.csv",
+            "sha256": digest(reference_path.read_bytes()),
+            "rows": 12 * (index + 1),
         }
-        if model == "svd":
-            training["model"]["parameters"].update(n_components=2, n_iter=7)
-        eda = {
-            "format_version": 1, "kind": "eda", "input": reference_input,
-            "rows": reference["rows"], "n_columns": 35, "n_orders": 6 * (index + 1),
-            "n_customers": 3 + index, "n_products": catalog_rows,
-            "period_start": "2018-01-01 00:00:00", "period_end": f"2018-01-0{index + 2} 00:00:00",
-            "checks": [
-                {"Проверка": name, "Результат": "OK", "Фактически": actual, "Ожидается": expected}
-                for name, actual, expected in (
-                    ("Схема и порядок колонок", "35 колонок, порядок совпадает", "35 колонок в порядке schema.COLUMNS"),
-                    ("Типы и даты", "35 типов совпадают", "типы schema.DTYPES"),
-                    ("Непустой датасет", str(reference["rows"]), "число строк > 0"),
-                    ("Пропуски", "0", "число пропущенных значений = 0"),
-                    ("Повторы ключа (order_id, order_item_id)", "0", "число повторений сверх первого = 0"),
-                    ("Хронологический порядок покупок", "0", "число переходов назад во времени = 0"),
-                    ("Конечная положительная цена", "0", "число цен, нарушающих 0 < price < inf, = 0"),
-                )
-            ],
+        reports = step_reports(run, prefix, index, model, batch, reference)
+        artifacts = {
+            "eda": f"{prefix}/eda/report.html",
+            "clustering": f"{prefix}/clustering/report.html",
+            "histories": f"{prefix}/histories",
+            "ranking": f"{prefix}/ranking",
         }
-        clustering = {
-            "format_version": 1, "kind": "clustering",
-            "inputs": {"dataset": reference_input,
-                       "new_batch": {key: batch[key] for key in ("path", "sha256")},
-                       "labels": {"path": str(run / prefix / "clustering/labels.csv"),
-                                  "sha256": digest(f"labels:{index}".encode())}},
-            "silhouette": None if index == 0 else 0.45,
-            "silhouette_reason": 'Один кластер <script>alert("x")</script>' if index == 0 else None,
-            "sample_rows": reference["rows"], "new_count": 12, "previous_count": index * 12,
-            "max_evaluation_rows": 1000, "random_state": 42,
-            "model": {"class": "TemporalClusterer", "parameters": {"n_clusters": 1 + index}},
-            "distance": {"class": "TimestampDistance", "parameters": {}},
-        }
-        reports = {"eda_metrics": ("eda/metrics.json", eda),
-                   "clustering_metrics": ("clustering/metrics.json", clustering),
-                   "ranking_manifest": ("ranking/manifest.json", training)}
-        for split, events_per_user, recall, ndcg in (("validation", 2, 0.5, 0.6), ("test", 1, 0.25, 0.3)):
-            reports[split] = (f"ranking/{split}/metrics.json", {
-                "format_version": 1, "split": split, "k": 2, "n_users": users,
-                "n_catalog": catalog_rows, "n_events": users * events_per_user,
-                "metrics": {"recall_at_k": recall + index * 0.1, "ndcg_at_k": ndcg + index * 0.1},
-                "inputs": {split: identity(split, users * events_per_user),
-                           "catalog": training["inputs"]["catalog"]},
-                "model": {"path": str(run / prefix / "ranking/model.joblib"),
-                          "sha256": training["model"]["sha256"]},
-            })
-        artifacts = {"eda": f"{prefix}/eda/report.html", "clustering": f"{prefix}/clustering/report.html",
-                     "histories": f"{prefix}/histories", "ranking": f"{prefix}/ranking"}
         if index:
-            reports["deda_metrics"] = ("deda/metrics.json", {
-                "format_version": 1, "kind": "deda", "drift_detected": True,
-                "inputs": {"reference": {**previous_reference, "path": str(reference_path)},
-                           "batch": {key: batch[key] for key in ("path", "sha256", "rows")}},
-                "thresholds": parameters["thresholds"],
-                "metrics": [
-                    {"feature": feature, "measure": measure, "value": value, "threshold": 0.1, "drift": value >= 0.1}
-                    for feature, measure, value in (("price", "KS D", 0.2),
-                                                    ("product_category_name", "TVD", 0.05),
-                                                    ("customer_state", "TVD", 0.15))
-                ],
-            })
+            reports["deda_metrics"] = (
+                "deda/metrics.json",
+                drift_report(previous_reference, reference_path, batch, parameters),
+            )
             artifacts["deda"] = f"{prefix}/deda/report.html"
-        files = {}
-        for name, (relative, report) in reports.items():
-            artifacts[name] = f"{prefix}/{relative}"
-            files[artifacts[name]] = write_json(run / artifacts[name], report)
+        files = save_reports(run, prefix, reports, artifacts)
         step = {
-            "format_version": 1, "step_index": index, "model": model,
-            "config_sha256": config_hash, "batch": batch, "reference": reference,
-            "artifacts": artifacts, "files": files,
-            "durations_seconds": {"reference": 1.5 + index, "clustering_train": 0.2,
-                                  "clustering_evaluation": 2.0, "generation": 0.3,
-                                  "ranking_train": 0.4, "validation": 0.5, "test": 0.6,
-                                  "total": 6.0 + index},
+            "format_version": 1,
+            "step_index": index,
+            "model": model,
+            "config_sha256": config_hash,
+            "batch": batch,
+            "reference": reference,
+            "artifacts": artifacts,
+            "files": files,
+            "durations_seconds": {
+                "reference": 1.5 + index,
+                "clustering_train": 0.2,
+                "clustering_evaluation": 2.0,
+                "generation": 0.3,
+                "ranking_train": 0.4,
+                "validation": 0.5,
+                "test": 0.6,
+                "total": 6.0 + index,
+            },
         }
         manifest = f"{prefix}/manifest.json"
         state["steps"].append({"path": manifest, "sha256": write_json(run / manifest, step)})
@@ -159,8 +122,13 @@ def completed_run(tmp_path, *, model="random", count=2):
     return run
 
 
-def resave_step(run, step):
-    """Re-sign deliberate metadata changes to exercise semantic, not hash, checks."""
+def resave_step(run: Path, step: dict[str, Any]) -> None:
+    """Re-sign deliberate metadata changes to exercise semantic checks.
+
+    Args:
+        run (Path): Existing run directory.
+        step (dict[str, Any]): Altered step manifest to save and sign.
+    """
     step["files"] = {name: digest((run / name).read_bytes()) for name in step["files"]}
     state = read_json(run / "state.json")
     saved = state["steps"][step["step_index"]]
@@ -168,12 +136,16 @@ def resave_step(run, step):
     write_json(run / "state.json", state)
 
 
-def test_two_step_aggregation_and_repeatable_outputs(tmp_path):
+def test_two_step_aggregation_and_repeatable_outputs(tmp_path: Path) -> None:
     run = completed_run(tmp_path)
     paths = report_summary(run)
     assert isinstance(paths, SummaryPaths)
     assert all(path.is_absolute() for path in vars(paths).values())
-    assert {path.name for path in paths.json_path.parent.iterdir()} == {"summary.json", "summary.csv", "summary.html"}
+    assert {path.name for path in paths.json_path.parent.iterdir()} == {
+        "summary.json",
+        "summary.csv",
+        "summary.html",
+    }
     summary = read_json(paths.json_path)
     assert summary["format_version"] == 1 and summary["model"] == "random"
     first, second = summary["steps"]
@@ -203,7 +175,9 @@ def test_two_step_aggregation_and_repeatable_outputs(tmp_path):
     assert {path: path.read_bytes() for path in vars(paths).values()} == before
 
 
-def test_parameters_provenance_relative_links_and_html_escaping(tmp_path, monkeypatch):
+def test_parameters_provenance_relative_links_and_html_escaping(
+    tmp_path: Path, monkeypatch: ft.MonkeyPatch
+) -> None:
     run = completed_run(tmp_path, model="svd")
     step = read_completed_steps(run)[0]
     step["artifacts"]["clustering"] = 'steps/step_000/clustering/a " & <report>.html'
@@ -223,20 +197,24 @@ def test_parameters_provenance_relative_links_and_html_escaping(tmp_path, monkey
     assert result["ranking"]["training"] == read_json(run / step["artifacts"]["ranking_manifest"])
 
     class Page(HTMLParser):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
-            self.tags, self.links = [], []
+            self.tags: list[str] = []
+            self.links: list[str] = []
 
-        def handle_starttag(self, tag, attrs):
+        @override
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
             self.tags.append(tag)
             if tag == "a":
-                self.links.append(dict(attrs)["href"])
+                href = dict(attrs)["href"]
+                assert href is not None
+                self.links.append(href)
 
     html = paths.html_path.read_text(encoding="utf-8")
     page = Page()
     page.feed(html)
     assert "script" not in page.tags and "img" not in page.tags
-    assert '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;' in html
+    assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in html
     assert "&lt;source&gt;" in html and "&amp;" in html
     assert all(link.startswith("../steps/") for link in page.links)
     assert unquote(result["links"]["clustering"]) == "../" + step["artifacts"]["clustering"]
@@ -246,14 +224,14 @@ def test_parameters_provenance_relative_links_and_html_escaping(tmp_path, monkey
     assert "n_components" in html and "Пропуски" in html
 
 
-def test_no_completed_steps_has_useful_error_and_no_output(tmp_path):
+def test_no_completed_steps_has_useful_error_and_no_output(tmp_path: Path) -> None:
     run = completed_run(tmp_path, count=0)
     with pytest.raises(ValueError, match="No completed steps.*complete a pipeline step"):
         report_summary(run)
     assert not (run / "summary").exists()
 
 
-def test_tampered_report_fails_verification_and_preserves_summary(tmp_path):
+def test_tampered_report_fails_verification_and_preserves_summary(tmp_path: Path) -> None:
     run = completed_run(tmp_path)
     paths = report_summary(run)
     before = {path: path.read_bytes() for path in vars(paths).values()}
@@ -264,7 +242,7 @@ def test_tampered_report_fails_verification_and_preserves_summary(tmp_path):
     assert {path: path.read_bytes() for path in vars(paths).values()} == before
 
 
-def test_partial_step_not_in_state_is_ignored(tmp_path):
+def test_partial_step_not_in_state_is_ignored(tmp_path: Path) -> None:
     run = completed_run(tmp_path, count=1)
     partial = run / "steps/step_001"
     partial.mkdir()
@@ -275,10 +253,12 @@ def test_partial_step_not_in_state_is_ignored(tmp_path):
     assert (partial / "manifest.json").read_text() == "unfinished and invalid JSON"
 
 
-def test_summary_needs_only_completed_json_after_sources_are_removed(tmp_path, monkeypatch):
+def test_summary_needs_only_completed_json_after_sources_are_removed(
+    tmp_path: Path, monkeypatch: ft.MonkeyPatch
+) -> None:
     run = completed_run(tmp_path)
     config = read_json(run / "config.json")
-    for source in [config["stream"], *config["batches"]]:
+    for source in (config["stream"], *config["batches"]):
         Path(source["path"]).unlink()
     (run / "reference.csv").unlink()
     steps = read_completed_steps(run)
@@ -288,22 +268,36 @@ def test_summary_needs_only_completed_json_after_sources_are_removed(tmp_path, m
         allowed.update(run / name for name in step["files"])
     original_open = Path.open
 
-    def only_metadata(path, mode="r", *args, **kwargs):
+    def only_metadata(
+        path: Path,
+        mode: str = "r",
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> IO[Any]:
         if "r" in mode:
             assert path in allowed, f"Summary reopened an input: {path}"
-        return original_open(path, mode, *args, **kwargs)
+        return original_open(path, mode, buffering, encoding, errors, newline)
 
     monkeypatch.setattr(Path, "open", only_metadata)
     paths = report_summary(run)
     assert paths.html_path.is_file() and paths.csv_path.is_file() and paths.json_path.is_file()
 
 
-@pytest.mark.parametrize("problem,message", [
-    ("k", "k differs"), ("users", "user count differs"),
-    ("catalog", "catalog identity mismatch"), ("model", "trained model identity mismatch"),
-    ("split", "input identity or event count mismatch"),
-])
-def test_incoherent_evaluations_are_rejected_even_with_valid_digests(tmp_path, problem, message):
+@pytest.mark.parametrize(
+    "problem,message",
+    [
+        ("k", "k differs"),
+        ("users", "user count differs"),
+        ("catalog", "catalog identity mismatch"),
+        ("model", "trained model identity mismatch"),
+        ("split", "input identity or event count mismatch"),
+    ],
+)
+def test_incoherent_evaluations_are_rejected_even_with_valid_digests(
+    tmp_path: Path, problem: str, message: str
+) -> None:
     run = completed_run(tmp_path, count=1)
     step = read_completed_steps(run)[0]
     path = run / step["artifacts"]["test"]
@@ -317,7 +311,9 @@ def test_incoherent_evaluations_are_rejected_even_with_valid_digests(tmp_path, p
     elif problem == "model":
         report["model"]["sha256"] = "f" * 64
     else:
-        report["inputs"]["test"] = dict(read_json(run / step["artifacts"]["validation"])["inputs"]["validation"])
+        report["inputs"]["test"] = dict(
+            read_json(run / step["artifacts"]["validation"])["inputs"]["validation"]
+        )
         report["n_events"] = report["inputs"]["test"]["rows"]
     write_json(path, report)
     resave_step(run, step)
@@ -327,7 +323,7 @@ def test_incoherent_evaluations_are_rejected_even_with_valid_digests(tmp_path, p
     assert not (run / "summary").exists()
 
 
-def test_summary_output_aliases_cannot_overwrite_inputs_in_partial_run(tmp_path):
+def test_summary_output_aliases_cannot_overwrite_inputs_in_partial_run(tmp_path: Path) -> None:
     run = completed_run(tmp_path, count=1)
     partial = run / "steps/step_001"
     partial.mkdir()

@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,7 +10,7 @@ from buy_today.clustering.models.temporal import TemporalClustering
 from buy_today.schema import SORT_KEY
 
 
-def test_sorted_equal_groups_preserve_input_order_and_do_not_mutate(working_frame):
+def test_sorted_equal_groups_preserve_input_order_and_do_not_mutate(working_frame: pd.DataFrame):
     # All ties: both parts of the row key must decide the order, not the index.
     working_frame[SORT_KEY[0]] = pd.Timestamp("2018-01-01")
     frame = working_frame.sample(frac=1, random_state=7)
@@ -16,18 +18,22 @@ def test_sorted_equal_groups_preserve_input_order_and_do_not_mutate(working_fram
     before = frame.copy(deep=True)
     model = TemporalClustering(n_clusters=5)
     actual = model.fit_predict(frame)
-    expected_by_key = dict(zip(
-        working_frame[["order_id", "order_item_id"]].itertuples(index=False, name=None),
-        [0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4],
-    ))
-    expected = [expected_by_key[key] for key in
-                frame[["order_id", "order_item_id"]].itertuples(index=False, name=None)]
+    expected_by_key = dict(
+        zip(
+            working_frame[["order_id", "order_item_id"]].itertuples(index=False, name=None),
+            [0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4],
+        )
+    )
+    expected = [
+        expected_by_key[key]
+        for key in frame[["order_id", "order_item_id"]].itertuples(index=False, name=None)
+    ]
     np.testing.assert_array_equal(actual, expected)
     np.testing.assert_array_equal(actual, model.labels_)
     pd.testing.assert_frame_equal(frame, before)
 
 
-def test_time_precedes_keys_and_refit_replaces_state(working_frame):
+def test_time_precedes_keys_and_refit_replaces_state(working_frame: pd.DataFrame):
     frame = working_frame.copy()
     frame[SORT_KEY[0]] = frame[SORT_KEY[0]].iloc[::-1].to_numpy()
     model = TemporalClustering(n_clusters=3)
@@ -47,14 +53,16 @@ def test_time_precedes_keys_and_refit_replaces_state(working_frame):
 
 
 @pytest.mark.parametrize("n_clusters", [0, -1, 1.5, "2", True, np.bool_(True), 13])
-def test_invalid_number_of_clusters(working_frame, n_clusters):
+def test_invalid_number_of_clusters(working_frame: pd.DataFrame, n_clusters: Any):
     model = TemporalClustering(n_clusters=n_clusters)
     with pytest.raises(ValueError):
         model.fit(working_frame)
 
 
-@pytest.mark.parametrize("problem", ["missing_time", "nat", "text_time", "duplicate", "missing_key"])
-def test_invalid_temporal_data(working_frame, problem):
+@pytest.mark.parametrize(
+    "problem", ["missing_time", "nat", "text_time", "duplicate", "missing_key"]
+)
+def test_invalid_temporal_data(working_frame: pd.DataFrame, problem: str):
     if problem == "missing_time":
         working_frame = working_frame.drop(columns=SORT_KEY[0])
     elif problem == "nat":
@@ -74,12 +82,27 @@ def test_distance_is_noop_clonable_and_works_without_fit():
     assert distance.fit(object(), y=object()) is distance
     assert vars(distance) == {}
     assert clone(distance).get_params() == {}
-    x = pd.DataFrame({SORT_KEY[0]: pd.to_datetime([
-        "2018-01-01 00:00:04", "2018-01-01 00:00:00", "2018-01-01 00:00:04",
-    ])})
-    y = pd.DataFrame({SORT_KEY[0]: pd.to_datetime([
-        "2018-01-02 00:00:00", "2017-12-31 23:59:59",
-    ])})
+    x = pd.DataFrame(
+        {
+            SORT_KEY[0]: pd.to_datetime(
+                [
+                    "2018-01-01 00:00:04",
+                    "2018-01-01 00:00:00",
+                    "2018-01-01 00:00:04",
+                ]
+            )
+        }
+    )
+    y = pd.DataFrame(
+        {
+            SORT_KEY[0]: pd.to_datetime(
+                [
+                    "2018-01-02 00:00:00",
+                    "2017-12-31 23:59:59",
+                ]
+            )
+        }
+    )
     matrix = TimestampDistance().pairwise(x)
     assert matrix.dtype == np.float64
     np.testing.assert_array_equal(matrix, [[0, 4, 0], [4, 0, 4], [0, 4, 0]])
@@ -88,12 +111,16 @@ def test_distance_is_noop_clonable_and_works_without_fit():
 
 
 @pytest.mark.parametrize("unit", ["ns", "us", "ms", "s"])
-def test_distance_respects_datetime_units(unit):
-    frame = pd.DataFrame({SORT_KEY[0]: np.array(["2018-01-01", "2018-01-02"], dtype=f"datetime64[{unit}]")})
+def test_distance_respects_datetime_units(unit: str):
+    frame = pd.DataFrame(
+        {SORT_KEY[0]: np.array(["2018-01-01", "2018-01-02"], dtype=f"datetime64[{unit}]")}
+    )
     assert TimestampDistance().pairwise(frame)[0, 1] == 86400
 
 
-@pytest.mark.parametrize("values", [[pd.NaT], ["invalid"], [1], pd.date_range("2018-01-01", periods=2, tz="UTC")])
-def test_distance_rejects_invalid_dates(values):
+@pytest.mark.parametrize(
+    "values", [[pd.NaT], ["invalid"], [1], pd.date_range("2018-01-01", periods=2, tz="UTC")]
+)
+def test_distance_rejects_invalid_dates(values: object):
     with pytest.raises(ValueError):
         TimestampDistance().pairwise(pd.DataFrame({SORT_KEY[0]: values}))

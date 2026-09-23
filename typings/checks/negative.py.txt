@@ -1,0 +1,37 @@
+from io import BytesIO
+from typing import assert_type
+import joblib
+import nbformat
+from matplotlib.figure import Figure
+from sklearn.base import BaseEstimator, clone
+from sklearn.metrics import silhouette_score
+from threadpoolctl import threadpool_limits
+
+model_name: str = clone(BaseEstimator())  # error
+_ = clone(42)  # error
+_ = joblib.dump(object(), 42)  # error
+_ = joblib.load(BytesIO(), mmap_mode="invalid")  # error
+cell = nbformat.v4.new_code_cell("print(1)")
+cell.source = 42  # error
+_ = nbformat.v4.new_code_cell(source=42)  # error
+_ = nbformat.v4.new_output("not-an-output")  # error
+notebook = nbformat.v4.new_notebook(cells=[cell])
+nbformat.write(notebook, 42)  # error
+nbformat.validate(notebook, ref=42)  # error
+with threadpool_limits(limits="invalid"):  # error
+    result = 1
+
+@threadpool_limits.wrap(limits=1)
+def limited(value: str) -> int:
+    return len(value)
+
+_ = limited(42)  # error
+figure = Figure()
+axes = figure.subplots()
+_ = axes.hist([1, 2], bins=object())  # error
+_ = axes.scatter([1], [2], alpha="opaque")  # error
+title: int = axes.text(0, 0, "title")  # error
+_ = figure.colorbar("not-a-mappable")  # error
+figure.savefig(42)  # error
+_ = silhouette_score([[0.0], [1.0], [5.0]], [0, 0, 1], metric=42)  # error
+_ = assert_type(clone(BaseEstimator()), str)  # error

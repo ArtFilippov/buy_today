@@ -4,6 +4,9 @@ from buy_today.generation.histories import GeneratedHistories, generate_historie
 from buy_today.generation.storage import GenerationPaths, generate_dataset, read_history_dataset
 
 __all__ = [
-    "GeneratedHistories", "GenerationPaths", "generate_histories",
-    "generate_dataset", "read_history_dataset",
+    "GeneratedHistories",
+    "GenerationPaths",
+    "generate_histories",
+    "generate_dataset",
+    "read_history_dataset",
 ]

@@ -1,39 +1,48 @@
 """Comparison report contents; validation and drift calculations run in the notebook."""
 
 from pathlib import Path
-from textwrap import dedent
-
-import nbformat
 import pandas as pd
 
-from buy_today.auto_eda.drift import DriftResult, DriftThresholds
+from buy_today.auto_eda.cells import DATASET_SCOPE, code, markdown, setup_code
+from buy_today.auto_eda.drift import DEFAULT_THRESHOLDS, DriftResult, DriftThresholds
 from buy_today.auto_eda.notebook import ReportPaths, execute_report
 
 
-def drift_checks(result: DriftResult) -> pd.DataFrame:
-    """Absence-of-drift checks are informative and never raise for detected drift."""
-    return pd.DataFrame([
-        {
-            "Проверка": f"Отсутствие дрейфа: {row['Признак']}",
-            "Результат": "НЕ ПРОЙДЕНА" if row["Дрейф"] else "OK",
-            "Фактически": f"{row['Мера']} = {row['Значение']:.6g}",
-            "Ожидается": f"{row['Мера']} < {row['Порог']:.6g}",
-        }
-        for row in result.metrics.to_dict("records")
-    ])
+def drift_checks(result: DriftResult[pd.DataFrame]) -> pd.DataFrame:
+    """Absence-of-drift checks are informative and never raise for detected drift.
+
+    Args:
+        result (DriftResult[pd.DataFrame]): Computed drift decisions.
+
+    Returns:
+        pd.DataFrame: Informative check rows, including failed absence checks.
+    """
+    return pd.DataFrame(
+        [
+            {
+                "Проверка": f"Отсутствие дрейфа: {row['Признак']}",
+                "Результат": "НЕ ПРОЙДЕНА" if row["Дрейф"] else "OK",
+                "Фактически": f"{row['Мера']} = {row['Значение']:.6g}",
+                "Ожидается": f"{row['Мера']} < {row['Порог']:.6g}",
+            }
+            for row in result.metrics.to_dict("records")
+        ]
+    )
 
 
-def drift_conclusion(reference: pd.DataFrame, batch: pd.DataFrame, result: DriftResult) -> str:
+def drift_conclusion(
+    reference: pd.DataFrame, batch: pd.DataFrame, result: DriftResult[pd.DataFrame]
+) -> str:
     changed = result.metrics.loc[result.metrics["Дрейф"], "Признак"].tolist()
     return (
         f"Эталон до добавления: {len(reference):,} позиций; батч: {len(batch):,} позиций.\n"
-        "Все обязательные проверки пройдены; пересечение ключей отсутствует. "
-        f"Объединение допустимо: {len(reference) + len(batch):,} позиций.\n"
-        f"drift_detected = {result.drift_detected}. "
+        + "Все обязательные проверки пройдены; пересечение ключей отсутствует. "
+        + f"Объединение допустимо: {len(reference) + len(batch):,} позиций.\n"
+        + f"drift_detected = {result.drift_detected}. "
         + (f"Дрейф обнаружен: {', '.join(changed)}.\n" if changed else "Дрейф не обнаружен.\n")
         + "Дрейф — информационный результат, он не препятствует обновлению эталона. "
-        "Это инженерные пороги расстояний распределений, не p-value и не оценка причинности. "
-        "Сам отчёт не изменяет входные CSV."
+        + "Это инженерные пороги расстояний распределений, не p-value и не оценка причинности. "
+        + "Сам отчёт не изменяет входные CSV."
     )
 
 
@@ -42,35 +51,33 @@ def report_drift(
     reference_path: Path | str,
     output_dir: Path | str,
     *,
-    thresholds: DriftThresholds = DriftThresholds(),
+    thresholds: DriftThresholds = DEFAULT_THRESHOLDS,
 ) -> ReportPaths:
-    """Report two existing CSVs; success permits an update even if drift is detected."""
+    """Report two existing CSVs; success permits an update even if drift is detected.
+
+    Args:
+        batch_path (Path | str): Incoming positions CSV.
+        reference_path (Path | str): Current accumulated positions CSV.
+        output_dir (Path | str): Directory for executed report artifacts.
+        thresholds (DriftThresholds, default=DEFAULT_THRESHOLDS): Inclusive detection limits.
+
+    Returns:
+        ReportPaths: Paths of the executed notebook and HTML report.
+    """
     batch_path = Path(batch_path).resolve()
     reference_path = Path(reference_path).resolve()
-    markdown = nbformat.v4.new_markdown_cell
-
-    def code(source: str) -> nbformat.NotebookNode:
-        return nbformat.v4.new_code_cell(dedent(source).strip())
-
     cells = [
-        markdown("""# DEDA · эталон и новый батч Olist
+        markdown(
+            """# DEDA · эталон и новый батч Olist
 
 ## Входные данные
 Сравниваются текущий физический **эталон до добавления** и один новый **батч**.
 Единица наблюдения — позиция заказа; ключ — `(order_id, order_item_id)`.
 Оба CSV анализируются целиком, без семплирования, импутации и удаления дубликатов.
-Подготовленный Olist — ретроспективная выборка доставленных покупок товаров
-с единственным продавцом, после удаления строк с любым пропуском.
-Распределения описывают сохранённые покупки, а не весь рынок или каталог.
-"""),
-        code(f"""
-            from pathlib import Path
-            import hashlib
-            import sys
-            import pandas as pd
-            import matplotlib.pyplot as plt
-            from IPython.display import HTML, display
-            from buy_today.schema import read_dataset
+"""
+            + DATASET_SCOPE
+        ),
+        setup_code(f"""
             from buy_today.auto_eda.checks import check_dataset, check_combination
             from buy_today.auto_eda.drift import DriftThresholds, evaluate_drift
             from buy_today.auto_eda.eda import dataset_summary
@@ -153,7 +160,9 @@ Top-10 по текущему эталону, равные частоты раз�
 категории батча — «Новые категории». Эти группы показываются при их наличии.
 Знаменатель — все позиции соответствующего входа.
 """),
-        code("figure = plot_categories_comparison(reference, batch)\nplt.show()\nplt.close(figure)"),
+        code(
+            "figure = plot_categories_comparison(reference, batch)\nplt.show()\nplt.close(figure)"
+        ),
         markdown("""### 3. Штаты покупателей (`customer_state`)
 Объединение штатов обоих входов, алфавитный порядок. Доли по позициям заказа,
 не по уникальным заказам или покупателям; нормировки на население нет.

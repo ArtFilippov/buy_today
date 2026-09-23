@@ -8,6 +8,8 @@ import joblib
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.typing import NDArray
+import fixture_types as ft
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
@@ -17,17 +19,19 @@ from buy_today.ranking.random import RandomRanker
 
 
 @pytest.fixture
-def training_data():
+def training_data() -> RankingData:
     return RankingData(
-        pd.DataFrame({
-            "user_id": ["007", "NA", "007", "пользователь"],
-            "product_id": ["item_00", "item_01", "item_00", "item_02"],
-        }),
+        pd.DataFrame(
+            {
+                "user_id": ["007", "NA", "007", "пользователь"],
+                "product_id": ["item_00", "item_01", "item_00", "item_02"],
+            }
+        ),
         pd.DataFrame({"product_id": [f"item_{index:02d}" for index in range(20)]}),
     )
 
 
-def test_sklearn_parameters_fit_and_clone(training_data):
+def test_sklearn_parameters_fit_and_clone(training_data: RankingData):
     model = RandomRanker()
     assert model.get_params() == {"random_state": 42}
     assert model.set_params(random_state=19) is model
@@ -46,7 +50,7 @@ def test_sklearn_parameters_fit_and_clone(training_data):
     np.testing.assert_array_equal(copied.predict("007", 20), model.predict("007", 20))
 
 
-def test_refit_replaces_users_catalog_and_seed(training_data):
+def test_refit_replaces_users_catalog_and_seed(training_data: RankingData):
     model = RandomRanker().fit(training_data)
     replacement = RankingData(
         pd.DataFrame({"user_id": ["007", "new"], "product_id": ["x", "y"]}),
@@ -62,12 +66,14 @@ def test_refit_replaces_users_catalog_and_seed(training_data):
         model.predict("NA", 1)
 
 
-def test_per_user_permutations_and_prefixes_are_independent_of_call_order(training_data):
+def test_per_user_permutations_and_prefixes_are_independent_of_call_order(
+    training_data: RankingData,
+):
     first = RandomRanker().fit(training_data)
     second = RandomRanker().fit(training_data)
     users = training_data.interactions.user_id.unique().tolist()
     size = len(training_data.catalog)
-    full = {}
+    full: dict[str, NDArray[np.object_]] = {}
     for user in users:
         prefix = first.predict(user, 5)
         recommendations = first.predict(user, size)
@@ -86,7 +92,7 @@ def test_per_user_permutations_and_prefixes_are_independent_of_call_order(traini
             np.testing.assert_array_equal(first.predict(user, k), full[user][:k])
 
 
-def test_input_row_order_does_not_change_rankings_or_mutate_inputs(training_data):
+def test_input_row_order_does_not_change_rankings_or_mutate_inputs(training_data: RankingData):
     interactions = training_data.interactions.copy(deep=True)
     catalog = training_data.catalog.copy(deep=True)
     reordered = RankingData(
@@ -102,7 +108,9 @@ def test_input_row_order_does_not_change_rankings_or_mutate_inputs(training_data
     pd.testing.assert_frame_equal(training_data.catalog, catalog)
 
 
-def test_fitted_model_is_isolated_from_training_tables_and_returned_arrays(training_data):
+def test_fitted_model_is_isolated_from_training_tables_and_returned_arrays(
+    training_data: RankingData,
+):
     model = RandomRanker().fit(training_data)
     expected = {
         user: model.predict(user, 20) for user in training_data.interactions.user_id.unique()
@@ -119,7 +127,7 @@ def test_fitted_model_is_isolated_from_training_tables_and_returned_arrays(train
         model.predict("replacement-user", 1)
 
 
-def test_changing_seed_changes_rankings(training_data):
+def test_changing_seed_changes_rankings(training_data: RankingData):
     first = RandomRanker(random_state=42).fit(training_data)
     changed = RandomRanker(random_state=43).fit(training_data)
     for user in training_data.interactions.user_id.unique():
@@ -127,38 +135,40 @@ def test_changing_seed_changes_rankings(training_data):
 
 
 @pytest.mark.parametrize("seed", [0, 2**32 - 1])
-def test_numpy_integer_parameters_and_seed_boundaries(training_data, seed):
+def test_numpy_integer_parameters_and_seed_boundaries(training_data: RankingData, seed: int):
     model = RandomRanker(random_state=np.int64(seed)).fit(training_data)
     assert set(model.predict("007", np.int64(20))) == set(training_data.catalog.product_id)
 
 
 @pytest.mark.parametrize("seed", [None, -1, 2**32, True, np.bool_(False), 1.5, "42"])
-def test_invalid_random_state_is_rejected_on_fit(training_data, seed):
+def test_invalid_random_state_is_rejected_on_fit(training_data: RankingData, seed: object):
     with pytest.raises(ValueError, match="random_state"):
         RandomRanker(random_state=seed).fit(training_data)
 
 
 @pytest.mark.parametrize("k", [0, -1, 21, True, np.bool_(True), 1.5, "3", None])
-def test_invalid_k_is_rejected(training_data, k):
+def test_invalid_k_is_rejected(training_data: RankingData, k: object):
     model = RandomRanker().fit(training_data)
     with pytest.raises(ValueError, match="k must"):
         model.predict("007", k)
 
 
 @pytest.mark.parametrize("user", ["unknown", "7", 7, None])
-def test_unknown_or_nonstring_user_is_rejected(training_data, user):
+def test_unknown_or_nonstring_user_is_rejected(training_data: RankingData, user: object):
     model = RandomRanker().fit(training_data)
     with pytest.raises(ValueError, match="Unknown user"):
         model.predict(user, 1)
 
 
-def test_fit_validates_catalog_inclusion(training_data):
+def test_fit_validates_catalog_inclusion(training_data: RankingData):
     invalid = RankingData(training_data.interactions, training_data.catalog.iloc[1:])
     with pytest.raises(ValueError, match="outside catalog"):
         RandomRanker().fit(invalid)
 
 
-def test_persistence_and_fresh_fit_reproduce_rankings_across_process_hash_seeds(training_data, tmp_path):
+def test_persistence_and_fresh_fit_reproduce_rankings_across_process_hash_seeds(
+    training_data: RankingData, tmp_path: ft.Path
+):
     model = RandomRanker().fit(training_data)
     model.predict("007", 2)
     expected = {
@@ -186,7 +196,11 @@ def test_persistence_and_fresh_fit_reproduce_rankings_across_process_hash_seeds(
     for hash_seed in ("1", "98765"):
         completed = subprocess.run(
             [sys.executable, "-c", script, str(path)],
-            cwd=tmp_path, env={**os.environ, "PYTHONHASHSEED": hash_seed},
-            capture_output=True, text=True, check=True, timeout=30,
+            cwd=tmp_path,
+            env={**os.environ, "PYTHONHASHSEED": hash_seed},
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
         )
         assert json.loads(completed.stdout) == [expected, expected]

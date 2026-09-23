@@ -1,0 +1,17 @@
+{
+  "distance_class": "buy_today.clustering.distances.CategoryPriceDistance",
+  "distance_formula": "1[category_a != category_b] + abs(log(price_a) - log(price_b))",
+  "temperature": 0.1,
+  "ranker_class": "buy_today.ranking.svd.SVDRanker",
+  "ranker_parameters": {"n_components": 256, "n_iter": 7, "random_state": 42},
+  "k": 10,
+  "selection_split": "validation",
+  "selection_seeds": [42, 137, 2026],
+  "selection_users": 1000,
+  "validation_ndcg_mean": 0.49050060136151635,
+  "validation_recall_mean": 0.3677244930994931,
+  "final_seeds": [73, 211, 907],
+  "final_users": 2000,
+  "test_used_for_selection": false,
+  "scope": "First Olist batch; synthetic single-category, narrow-price repeat purchases"
+}

@@ -51,9 +51,7 @@ DTYPES = {
     "product_width_cm": "float64",
 }
 COLUMNS = tuple(DTYPES)
-CSV_DTYPES = {
-    column: dtype for column, dtype in DTYPES.items() if column not in DATE_COLUMNS
-}
+CSV_DTYPES = {column: dtype for column, dtype in DTYPES.items() if column not in DATE_COLUMNS}
 
 
 def read_dataset(path: Path | str) -> pd.DataFrame:
@@ -61,17 +59,22 @@ def read_dataset(path: Path | str) -> pd.DataFrame:
 
     Raises ValueError for unexpected columns or unparseable values. This reads
     the schema; checks such as completeness and data drift belong to the caller.
+
+    Args:
+        path (Path | str): Prepared CSV to read.
+
+    Returns:
+        pd.DataFrame: Positions with schema column order and restored dtypes.
+
+    Raises:
+        ValueError: Columns or values do not match the working schema.
     """
-    frame = pd.read_csv(
-        path, dtype=CSV_DTYPES, encoding="utf-8", float_precision="round_trip"
-    )
+    frame = pd.read_csv(path, dtype=CSV_DTYPES, encoding="utf-8", float_precision="round_trip")
     if tuple(frame.columns) != COLUMNS:
         raise ValueError(
             "Expected the 35 working dataset columns in schema order; "
-            f"got {len(frame.columns)} columns: {list(frame.columns)}"
+            + f"got {len(frame.columns)} columns: {list(frame.columns)}"
         )
     for column in DATE_COLUMNS:
-        frame[column] = pd.to_datetime(
-            frame[column], format=DATE_FORMAT, errors="raise"
-        )
-    return frame.astype(DTYPES)
+        frame[column] = pd.to_datetime(frame[column], format=DATE_FORMAT, errors="raise")
+    return pd.DataFrame.astype(frame, DTYPES)
